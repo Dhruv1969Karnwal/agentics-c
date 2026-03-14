@@ -380,7 +380,7 @@ function getCachedChats(opts = {}) {
     cs.total_input_tokens AS _inTok, cs.total_output_tokens AS _outTok,
     cs.total_cache_read AS _cacheR, cs.total_cache_write AS _cacheW,
     cs.total_user_chars AS _uChars, cs.total_assistant_chars AS _aChars
-    FROM chats c LEFT JOIN chat_stats cs ON cs.chat_id = c.id WHERE 1=1`;
+    FROM chats c LEFT JOIN chat_stats cs ON cs.chat_id = c.id WHERE c.source = 'codemate-agent'`;
   const params = [];
   const hf = hiddenFolderFilter(opts, 'c.folder');
   if (hf.sql) { sql += hf.sql; params.push(...hf.params); }
@@ -416,7 +416,7 @@ function getCachedChats(opts = {}) {
 }
 
 function countCachedChats(opts = {}) {
-  let sql = 'SELECT COUNT(*) as cnt FROM chats WHERE 1=1';
+  let sql = "SELECT COUNT(*) as cnt FROM chats WHERE source = 'codemate-agent'";
   const params = [];
   const hf = hiddenFolderFilter(opts);
   if (hf.sql) { sql += hf.sql; params.push(...hf.params); }
@@ -430,7 +430,7 @@ function countCachedChats(opts = {}) {
 
 function getCachedOverview(opts = {}) {
   // Build conditions dynamically to support editor + date range filters
-  const conditions = [];
+  const conditions = ["source = 'codemate-agent'"];
   const params = [];
   const hf = hiddenFolderFilter(opts);
   if (hf.sql) { conditions.push(hf.sql.replace(' AND ', '')); params.push(...hf.params); }
@@ -499,7 +499,7 @@ function getCachedOverview(opts = {}) {
 }
 
 function getCachedDailyActivity(opts = {}) {
-  const conditions = [];
+  const conditions = ["source = 'codemate-agent'"];
   const params = [];
   const hf = hiddenFolderFilter(opts);
   if (hf.sql) { conditions.push(hf.sql.replace(' AND ', '')); params.push(...hf.params); }
@@ -537,7 +537,7 @@ function getCachedDeepAnalytics(opts = {}) {
   log('--- FUNCTION START ---');
   log('Options received:', opts);
 
-  let sql = 'SELECT cs.* FROM chat_stats cs JOIN chats c ON cs.chat_id = c.id WHERE 1=1';
+  let sql = "SELECT cs.* FROM chat_stats cs JOIN chats c ON cs.chat_id = c.id WHERE c.source = 'codemate-agent'";
   const params = [];
 
   log('Initial SQL:', sql);
@@ -799,7 +799,7 @@ function getCachedChat(id) {
 
 function getCachedProjects(opts = {}) {
   // Build date filter
-  let dateFilter = '';
+  let dateFilter = " AND source = 'codemate-agent'";
   const dateParams = [];
   if (!opts.includeHidden) {
     const hf = hiddenFolderFilter(opts);
@@ -895,7 +895,7 @@ function getCachedToolCalls(toolName, opts = {}) {
            c.name as chat_name, tc.chat_id
     FROM tool_calls tc
     JOIN chats c ON tc.chat_id = c.id
-    WHERE tc.tool_name = ?`;
+    WHERE tc.tool_name = ? AND tc.source = 'codemate-agent'`;
   const params = [toolName];
   if (opts.folder) { sql += ' AND tc.folder = ?'; params.push(opts.folder); }
   sql += ' ORDER BY tc.timestamp DESC LIMIT ?';
@@ -999,7 +999,7 @@ async function resetAndRescanAsync(onProgress) {
 
 function getCachedDashboardStats(opts = {}) {
   // Build conditions dynamically to support editor + date range filters
-  const conditions = [];
+  const conditions = ["source = 'codemate-agent'"];
   const params = [];
   const hf = hiddenFolderFilter(opts);
   if (hf.sql) { conditions.push(hf.sql.replace(' AND ', '')); params.push(...hf.params); }
@@ -1360,7 +1360,7 @@ function estimateCosts(whereClause = '', params = []) {
 }
 
 function getCostBreakdown(opts = {}) {
-  let whereClause = '';
+  let whereClause = " AND c.source = 'codemate-agent'";
   const params = [];
   const hf = hiddenFolderFilter(opts, 'c.folder');
   if (hf.sql) { whereClause += hf.sql; params.push(...hf.params); }
@@ -1373,7 +1373,7 @@ function getCostBreakdown(opts = {}) {
 }
 
 function getCostAnalytics(opts = {}) {
-  const conditions = [];
+  const conditions = ["c.source = 'codemate-agent'"];
   const params = [];
   const hf = hiddenFolderFilter(opts, 'c.folder');
   if (hf.sql) { conditions.push(hf.sql.replace(' AND ', '')); params.push(...hf.params); }

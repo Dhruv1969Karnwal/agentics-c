@@ -1,20 +1,5 @@
-const cursor = require('./cursor');
-const windsurf = require('./windsurf');
-const antigravity = require('./antigravity');
-const claude = require('./claude');
-const vscode = require('./vscode');
-const zed = require('./zed');
-const opencode = require('./opencode');
-const codex = require('./codex');
-const gemini = require('./gemini');
-const copilot = require('./copilot');
-const cursorAgent = require('./cursor-agent');
-const commandcode = require('./commandcode');
-const goose = require('./goose');
-const kiro = require('./kiro');
 const codemateAgent = require('./codemate-agent');
 
-// const editors = [cursor, windsurf, antigravity, claude, vscode, zed, opencode, codex, gemini, copilot, cursorAgent, commandcode, goose, kiro, codemateAgent];
 const editors = [codemateAgent]
 // Build a unified source → display-label map from all editor modules
 const editorLabels = {};
