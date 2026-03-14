@@ -10,13 +10,6 @@ function fmt(n) {
   return n.toLocaleString();
 }
 
-function fmtCost(n) {
-  if (n == null || n === 0) return '$0';
-  if (n < 0.01) return '<$0.01';
-  if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'K';
-  if (n >= 100) return '$' + Math.round(n);
-  return '$' + n.toFixed(2);
-}
 
 const EDITOR_COLORS = {
   'cursor': '#f59e0b',
@@ -87,7 +80,7 @@ function generateShareSvg(overview, stats, costs, opts = {}) {
   const show = {
     editors:  opts.showEditors  !== false,
     models:   opts.showModels   !== false,
-    costs:    opts.showCosts    !== false,
+    showCosts:    false,
     tokens:   opts.showTokens   !== false,
     hours:    opts.showHours    !== false,
   };
@@ -104,7 +97,7 @@ function generateShareSvg(overview, stats, costs, opts = {}) {
   const streaks = stats.streaks || {};
   const topModels = (stats.topModels || []).slice(0, 5);
   const costData = costs || {};
-  const totalCost = costData.totalCost || 0;
+  const totalCost = 0;
   const costByEditor = (costData.byEditor || []).slice(0, 6);
   const totalTokens = (tk.input || 0) + (tk.output || 0);
   const now = new Date();
@@ -171,9 +164,6 @@ function generateShareSvg(overview, stats, costs, opts = {}) {
     { label: 'active days', value: String(streaks.totalDays || 0) },
     { label: 'streak', value: `${streaks.current || 0}d` },
   ];
-  if (show.costs && totalCost > 0) {
-    kpiItems.push({ label: 'est. cost', value: fmtCost(totalCost) });
-  }
   const kpiW = (W - pad * 2 - (kpiItems.length - 1) * 8) / kpiItems.length;
   kpiItems.forEach((item, i) => {
     const x = pad + i * (kpiW + 8);

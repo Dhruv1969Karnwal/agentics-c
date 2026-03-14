@@ -6,9 +6,9 @@ import { Doughnut, Bar, Line } from 'react-chartjs-2'
 import KpiCard from '../components/KpiCard'
 import ActivityHeatmap from '../components/ActivityHeatmap'
 import DateRangePicker from '../components/DateRangePicker'
-import { editorColor, editorLabel, formatNumber, formatCost, dateRangeToApiParams } from '../lib/constants'
+import { editorColor, editorLabel, formatNumber, dateRangeToApiParams } from '../lib/constants'
 import EditorIcon from '../components/EditorIcon'
-import { fetchDailyActivity, fetchOverview as fetchOverviewApi, fetchDashboardStats, fetchChats, fetchCosts } from '../lib/api'
+import { fetchDailyActivity, fetchOverview as fetchOverviewApi, fetchDashboardStats, fetchChats } from '../lib/api'
 import ChatSidebar from '../components/ChatSidebar'
 import AnimatedLoader from '../components/AnimatedLoader'
 import ShareModal from '../components/ShareModal'
@@ -33,11 +33,9 @@ export default function Dashboard({ overview }) {
   const [selectedEditor, setSelectedEditor] = useState(null)
   const [dateRange, setDateRange] = useState(null)
   const { dark } = useTheme()
-  const [costs, setCosts] = useState(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [largeContextChats, setLargeContextChats] = useState(null)
   const [selectedChatId, setSelectedChatId] = useState(null)
-  const txtColor = dark ? '#888' : '#555'
   const txtDim = dark ? '#555' : '#999'
   const gridColor = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'
   const legendColor = dark ? '#888' : '#555'
@@ -69,19 +67,16 @@ export default function Dashboard({ overview }) {
       setFilteredData(null)
       fetchDailyActivity(dateParams).then(setDailyData)
       fetchDashboardStats(dateParams).then(setStats)
-      fetchCosts(dateParams).then(setCosts)
       return
     }
     Promise.all([
       fetchOverviewApi({ editor: selectedEditor, ...dateParams }),
       fetchDailyActivity({ editor: selectedEditor, ...dateParams }),
       fetchDashboardStats({ editor: selectedEditor, ...dateParams }),
-      fetchCosts({ editor: selectedEditor, ...dateParams }),
-    ]).then(([ov, daily, st, c]) => {
+    ]).then(([ov, daily, st]) => {
       setFilteredData(ov)
       setDailyData(daily)
       setStats(st)
-      setCosts(c)
     })
   }, [selectedEditor, dateRange])
 
@@ -120,7 +115,7 @@ export default function Dashboard({ overview }) {
     labels: stats.hourly.map((_, i) => `${String(i).padStart(2, '0')}`),
     datasets: [{
       data: stats.hourly,
-      backgroundColor: stats.hourly.map((v, i) => {
+      backgroundColor: stats.hourly.map((v) => {
         const peak = Math.max(...stats.hourly)
         const ratio = peak > 0 ? v / peak : 0
         return ratio > 0.75 ? '#6366f1' : ratio > 0.5 ? '#818cf8' : ratio > 0.25 ? '#a5b4fc' : '#c7d2fe50'
@@ -166,7 +161,6 @@ export default function Dashboard({ overview }) {
   const cacheHitRate = tk && tk.input > 0 ? ((tk.cacheRead / tk.input) * 100).toFixed(1) : 0
   const outputInputRatio = tk && tk.input > 0 ? (tk.output / tk.input).toFixed(2) : 0
   const avgMsgsPerSession = tk && tk.sessions > 0 ? (depthData ? (Object.values(stats.depthBuckets).reduce((s, v, i) => {
-    const labels = Object.keys(stats.depthBuckets)
     const midpoints = [1, 3.5, 8, 15.5, 35.5, 75.5, 150]
     return s + v * midpoints[i]
   }, 0) / tk.sessions).toFixed(1) : '—') : '—'
@@ -250,7 +244,6 @@ export default function Dashboard({ overview }) {
           <KpiCard label="cache write" value={formatNumber(tk.cacheWrite)} />
           <KpiCard label="out/in ratio" value={`${outputInputRatio}×`} sub={<span className="flex items-center gap-0.5"><Zap size={8} /> efficiency</span>} />
           <KpiCard label="you wrote" value={formatNumber(tk.userChars)} sub={`AI wrote ${formatNumber(tk.assistantChars)}`} />
-          <KpiCard label="est. cost" value={costs && costs.totalCost > 0 ? formatCost(costs.totalCost) : '—'} sub={costs && costs.byModel.length > 0 ? `${costs.byModel.length} model${costs.byModel.length !== 1 ? 's' : ''}` : undefined} />
         </div>
       )}
 
@@ -439,11 +432,10 @@ export default function Dashboard({ overview }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         {stats && stats.topModels.length > 0 && (
           <div className="card p-3">
-            <SectionTitle>top models {costs && costs.totalCost > 0 && <span style={{ color: 'var(--c-text3)' }}>({formatCost(costs.totalCost)} est.)</span>}</SectionTitle>
+            <SectionTitle>top models</SectionTitle>
             <div className="space-y-1">
               {stats.topModels.map((m, i) => {
                 const maxM = stats.topModels[0].count
-                const modelCost = costs?.byModel?.find(c => c.model === m.name)
                 return (
                   <div key={m.name} className="flex items-center gap-2">
                     <span className="text-[10px] w-3 text-right" style={{ color: 'var(--c-text3)' }}>{i + 1}</span>
@@ -451,7 +443,6 @@ export default function Dashboard({ overview }) {
                     <div className="flex-1 h-4 rounded-sm overflow-hidden" style={{ background: 'var(--c-code-bg)' }}>
                       <div className="h-full rounded-sm" style={{ width: `${(m.count / maxM * 100).toFixed(1)}%`, background: i === 0 ? '#6366f1' : i === 1 ? '#818cf8' : '#a5b4fc40' }} />
                     </div>
-                    {modelCost ? <span className="text-[9px] w-12 text-right" style={{ color: '#10b981' }}>{formatCost(modelCost.cost)}</span> : null}
                     <span className="text-[10px] w-8 text-right" style={{ color: 'var(--c-text3)' }}>{m.count}</span>
                   </div>
                 )

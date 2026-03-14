@@ -66,43 +66,4 @@ async function getAllUsage() {
   return results;
 }
 
-/**
- * Get all artifacts for a given project folder from all editors.
- * Also scans for general/shared artifact files (plan.md, etc.).
- */
-function getAllArtifacts(folder) {
-  const { scanArtifacts } = require('./base');
-  const artifacts = [];
-
-  // Collect from each editor that implements getArtifacts
-  for (const editor of editors) {
-    if (typeof editor.getArtifacts !== 'function') continue;
-    try {
-      artifacts.push(...editor.getArtifacts(folder));
-    } catch { /* skip broken adapters */ }
-  }
-
-  // General / shared artifact files (not tied to any specific editor)
-  if (folder) {
-    try {
-      artifacts.push(...scanArtifacts(folder, {
-        editor: '_general',
-        label: 'General',
-        files: ['AGENTS.md', '.mcp.json', 'plan.md', 'progress.md', 'TODO.md', 'CONVENTIONS.md', 'ARCHITECTURE.md', 'PLANNING.md'],
-        dirs: [],
-      }));
-    } catch { /* skip */ }
-  }
-
-  // Deduplicate by path — editor-specific entries take priority over general
-  const seen = new Map();
-  for (const a of artifacts) {
-    const existing = seen.get(a.path);
-    if (!existing || (existing.editor === '_general' && a.editor !== '_general')) {
-      seen.set(a.path, a);
-    }
-  }
-  return Array.from(seen.values());
-}
-
-module.exports = { getAllChats, getMessages, editors, editorLabels, resetCaches, getAllUsage, getAllArtifacts };
+module.exports = { getAllChats, getMessages, editors, editorLabels, resetCaches, getAllUsage };

@@ -184,83 +184,11 @@ app.get('/api/dashboard-stats', (req, res) => {
   }
 });
 
-app.get('/api/cost-analytics', (req, res) => {
-  try {
-    const opts = {
-      editor: req.query.editor || null,
-      ...parseDateOpts(req.query),
-      hiddenFolders: getHiddenFolders(),
-    };
-    res.json(cache.getCostAnalytics(opts));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Cost endpoints removed
 
-app.get('/api/costs', (req, res) => {
-  try {
-    const opts = {
-      editor: req.query.editor || null,
-      folder: req.query.folder || null,
-      chatId: req.query.chatId || null,
-      ...parseDateOpts(req.query),
-      hiddenFolders: getHiddenFolders(),
-    };
-    res.json(cache.getCostBreakdown(opts));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Tool-calls removed (since SQL/deep inspection is being limited)
 
-app.get('/api/tool-calls', (req, res) => {
-  try {
-    const name = req.query.name;
-    if (!name) return res.status(400).json({ error: 'name query param required' });
-    const opts = {
-      limit: Math.min(parseInt(req.query.limit) || 200, 1000),
-      folder: req.query.folder || null,
-    };
-    res.json(cache.getCachedToolCalls(name, opts));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/query', (req, res) => {
-  try {
-    const { sql } = req.body;
-    if (!sql || typeof sql !== 'string') return res.status(400).json({ error: 'sql string required' });
-    // Only allow SELECT / PRAGMA / EXPLAIN / WITH statements
-    const trimmed = sql.trim().replace(/^--.*$/gm, '').trim();
-    const first = trimmed.split(/\s+/)[0].toUpperCase();
-    if (!['SELECT', 'PRAGMA', 'EXPLAIN', 'WITH'].includes(first)) {
-      return res.status(403).json({ error: 'Only SELECT queries are allowed' });
-    }
-    const db = cache.getDb();
-    if (!db) return res.status(500).json({ error: 'Database not initialized' });
-    const stmt = db.prepare(sql);
-    const rows = stmt.all();
-    const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
-    res.json({ columns, rows, count: rows.length });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-app.get('/api/schema', (req, res) => {
-  try {
-    const db = cache.getDb();
-    if (!db) return res.status(500).json({ error: 'Database not initialized' });
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all();
-    const schema = {};
-    for (const { name } of tables) {
-      schema[name] = db.prepare(`PRAGMA table_info(${name})`).all();
-    }
-    res.json({ tables: tables.map(t => t.name), schema });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// SQL endpoints removed
 
 app.get('/api/share-image', (req, res) => {
   try {
@@ -268,17 +196,15 @@ app.get('/api/share-image', (req, res) => {
     if (req.query.folder) filterOpts.folder = req.query.folder;
     const overview = cache.getCachedOverview(filterOpts);
     const stats = cache.getCachedDashboardStats(filterOpts);
-    const costs = cache.getCostAnalytics(filterOpts);
     const opts = {};
     if (req.query.showEditors !== undefined) opts.showEditors = req.query.showEditors !== 'false';
     if (req.query.showModels !== undefined) opts.showModels = req.query.showModels !== 'false';
-    if (req.query.showCosts !== undefined) opts.showCosts = req.query.showCosts !== 'false';
     if (req.query.showTokens !== undefined) opts.showTokens = req.query.showTokens !== 'false';
     if (req.query.showHours !== undefined) opts.showHours = req.query.showHours !== 'false';
     if (req.query.username) opts.username = req.query.username;
     if (req.query.theme) opts.theme = req.query.theme;
     if (req.query.folder) opts.folder = req.query.folder;
-    const svg = generateShareSvg(overview, stats, costs, opts);
+    const svg = generateShareSvg(overview, stats, null, opts);
     res.setHeader('Content-Type', 'image/svg+xml');
     res.send(svg);
   } catch (err) {
@@ -297,22 +223,6 @@ app.get('/api/usage', async (req, res) => {
   }
 });
 
-app.get('/api/refetch', async (req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-  });
-  try {
-    const result = await cache.resetAndRescanAsync((progress) => {
-      res.write(`data: ${JSON.stringify(progress)}\n\n`);
-    });
-    res.write(`data: ${JSON.stringify({ done: true, total: result.total, analyzed: result.analyzed })}\n\n`);
-  } catch (err) {
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-  }
-  res.end();
-});
 
 // ============================================================
 // Config endpoints
@@ -365,67 +275,7 @@ app.get('/api/check-ai', async (req, res) => {
 // Artifacts — delegates to editors/index.js getAllArtifacts
 // ============================================================
 
-app.get('/api/artifacts', (req, res) => {
-  try {
-    const { getAllArtifacts } = require('./editors');
-    const projects = cache.getCachedProjects({ hiddenFolders: getHiddenFolders() });
-    const result = [];
-
-    for (const project of projects) {
-      const folder = project.folder;
-      if (!folder) continue;
-
-      const artifacts = getAllArtifacts(folder);
-      if (artifacts.length === 0) continue;
-
-      // Group by editor
-      const byEditor = {};
-      for (const a of artifacts) {
-        if (!byEditor[a.editor]) byEditor[a.editor] = { editor: a.editor, label: a.editorLabel, files: [] };
-        byEditor[a.editor].files.push(a);
-      }
-
-      result.push({
-        folder,
-        name: project.name || path.basename(folder),
-        totalArtifacts: artifacts.length,
-        editors: Object.values(byEditor),
-      });
-    }
-
-    // Sort by total artifacts descending
-    result.sort((a, b) => b.totalArtifacts - a.totalArtifacts);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/artifact-content', (req, res) => {
-  try {
-    const filePath = req.query.path;
-    if (!filePath) return res.status(400).json({ error: 'path query param required' });
-
-    // Security: validate file exists in known artifact results for at least one project
-    const { getAllArtifacts } = require('./editors');
-    const projects = cache.getCachedProjects({ hiddenFolders: getHiddenFolders() });
-    let allowed = false;
-    for (const project of projects) {
-      if (!project.folder) continue;
-      const artifacts = getAllArtifacts(project.folder);
-      if (artifacts.some(a => a.path === filePath)) { allowed = true; break; }
-    }
-    if (!allowed) return res.status(403).json({ error: 'Not an artifact file' });
-
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
-
-    const content = fs.readFileSync(filePath, 'utf-8');
-    const stat = fs.statSync(filePath);
-    res.json({ path: filePath, name: path.basename(filePath), content, size: stat.size, modifiedAt: stat.mtime.getTime() });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Artifacts endpoints removed
 
 app.get('/api/all-projects', (req, res) => {
   try {

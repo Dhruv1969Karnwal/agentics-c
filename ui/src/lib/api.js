@@ -127,25 +127,7 @@ export async function fetchDashboardStats(params = {}) {
   return res.json();
 }
 
-export async function fetchCostAnalytics(params = {}) {
-  const q = new URLSearchParams();
-  if (params.editor) q.set('editor', params.editor);
-  appendDateParams(q, params);
-  const qs = q.toString();
-  const res = await fetch(`${BASE}/api/cost-analytics${qs ? '?' + qs : ''}`);
-  return res.json();
-}
-
-export async function fetchCosts(params = {}) {
-  const q = new URLSearchParams();
-  if (params.editor) q.set('editor', params.editor);
-  if (params.folder) q.set('folder', params.folder);
-  if (params.chatId) q.set('chatId', params.chatId);
-  appendDateParams(q, params);
-  const qs = q.toString();
-  const res = await fetch(`${BASE}/api/costs${qs ? '?' + qs : ''}`);
-  return res.json();
-}
+// Costs and artifacts removed
 
 export async function fetchConfig() {
   const res = await fetch(`${BASE}/api/config`);
@@ -166,19 +148,7 @@ export async function fetchAllProjects() {
   return res.json();
 }
 
-export async function executeQuery(sql) {
-  const res = await fetch(`${BASE}/api/query`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql }),
-  });
-  return res.json();
-}
-
-export async function fetchSchema() {
-  const res = await fetch(`${BASE}/api/schema`);
-  return res.json();
-}
+// SQL removed
 
 export async function fetchShareImage(opts = {}) {
   const q = new URLSearchParams();
@@ -214,18 +184,6 @@ export async function fetchUsage() {
   return res.json();
 }
 
-// ── Artifacts API ──
-
-export async function fetchArtifacts() {
-  const res = await fetch(`${BASE}/api/artifacts`);
-  return res.json();
-}
-
-export async function fetchArtifactContent(filePath) {
-  const q = new URLSearchParams({ path: filePath });
-  const res = await fetch(`${BASE}/api/artifact-content?${q}`);
-  return res.json();
-}
 
 // ── Relay API ──
 

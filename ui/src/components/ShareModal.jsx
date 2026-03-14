@@ -4,7 +4,6 @@ import { fetchShareImage, fetchProjects } from '../lib/api'
 
 const TOGGLE_ITEMS = [
   { key: 'showEditors', label: 'Editors', icon: BarChart3 },
-  { key: 'showCosts', label: 'Est. Costs', icon: DollarSign },
   { key: 'showHours', label: 'Peak Hours', icon: Clock },
   { key: 'showModels', label: 'Top Models', icon: Cpu },
   { key: 'showTokens', label: 'Token Footer', icon: Braces },
@@ -13,7 +12,6 @@ const TOGGLE_ITEMS = [
 export default function ShareModal({ open, onClose }) {
   const [opts, setOpts] = useState({
     showEditors: true,
-    showCosts: true,
     showHours: true,
     showModels: true,
     showTokens: true,

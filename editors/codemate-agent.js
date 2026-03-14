@@ -139,15 +139,27 @@ function extractEmbeddedUsage(msg) {
  * @param {Array|string} content
  * @returns {string}
  */
-function extractTextContent(content) {
+/**
+ * Flatten all text-type content parts into a single trimmed string.
+ * Non-text parts (tool_use, tool_result, image) are intentionally skipped.
+ *
+ * @param {Array|string} content
+ * @param {boolean} onlyFirstPart — if true, only use the first text part found.
+ * @returns {string}
+ */
+function extractTextContent(content, onlyFirstPart = false) {
   if (typeof content === 'string') return content.trim();
   if (!Array.isArray(content)) return '';
 
-  return content
+  const textParts = content
     .filter((part) => part.type === 'text' && typeof part.text === 'string')
-    .map((part) => part.text)
-    .join('\n')
-    .trim();
+    .map((part) => part.text);
+
+  if (onlyFirstPart && textParts.length > 0) {
+    return textParts[0].trim();
+  }
+
+  return textParts.join('\n').trim();
 }
 
 /**
@@ -396,7 +408,7 @@ function getMessages(chat) {
     const role = classifyRole(msg);
     if (!role) continue;
 
-    const textContent = extractTextContent(msg.content);
+    const textContent = extractTextContent(msg.content, role === 'user');
     if (!textContent) continue;
 
     const embeddedUsage = extractEmbeddedUsage(msg);

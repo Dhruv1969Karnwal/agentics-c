@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import { Loader2, X, Zap, MessageSquare, Wrench, Cpu, TrendingUp } from 'lucide-react'
-import { fetchDeepAnalytics, fetchToolCalls, fetchCosts } from '../lib/api'
-import { editorLabel, editorColor, formatNumber, formatCost, dateRangeToApiParams } from '../lib/constants'
+import { fetchDeepAnalytics, fetchToolCalls } from '../lib/api'
+import { editorLabel, formatNumber, dateRangeToApiParams } from '../lib/constants'
 import { useTheme } from '../lib/theme'
 import KpiCard from '../components/KpiCard'
 import EditorIcon from '../components/EditorIcon'
@@ -195,7 +195,6 @@ export default function DeepAnalysis({ overview }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [selectedTool, setSelectedTool] = useState(null)
-  const [costs, setCosts] = useState(null)
   const chartRef = useRef(null)
   const { dark } = useTheme()
   const txtColor = dark ? '#a0a0a0' : '#444'
@@ -209,12 +208,10 @@ export default function DeepAnalysis({ overview }) {
   async function analyze() {
     setLoading(true)
     const dateParams = dateRangeToApiParams(dateRange)
-    const [result, costData] = await Promise.all([
+    const [result] = await Promise.all([
       fetchDeepAnalytics({ editor, folder: folder || undefined, limit: 500, ...dateParams }),
-      fetchCosts({ editor, folder: folder || undefined, ...dateParams }),
     ])
     setData(result)
-    setCosts(costData)
     setLoading(false)
   }
 
@@ -286,7 +283,6 @@ export default function DeepAnalysis({ overview }) {
             <KpiCard label="tool calls" value={formatNumber(data.totalToolCalls)} sub={`${insights.toolsPerSession}/session`} />
             <KpiCard label="total tokens" value={formatNumber(insights.totalTok)} sub={`${formatNumber(insights.tokPerMsg)}/msg`} />
             <KpiCard label="you wrote" value={formatNumber(data.totalUserChars)} sub={`AI: ${insights.aiVsHuman}\u00d7 more`} />
-            <KpiCard label="est. cost" value={costs && costs.totalCost > 0 ? formatCost(costs.totalCost) : '\u2014'} />
           </div>
 
           {/* Token flow + Insights row */}

@@ -3,8 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Search, FolderOpen, Calendar, MessageSquare, Wrench, Cpu, Zap, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
-import { fetchProjects, fetchChats, fetchCosts } from '../lib/api'
-import { editorColor, editorLabel, formatNumber, formatDate, formatCost } from '../lib/constants'
+import { fetchProjects, fetchChats } from '../lib/api'
+import { editorColor, editorLabel, formatNumber, formatDate } from '../lib/constants'
 import { useTheme } from '../lib/theme'
 import KpiCard from '../components/KpiCard'
 import EditorIcon from '../components/EditorIcon'
@@ -33,7 +33,6 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true)
   const [chatSearch, setChatSearch] = useState('')
   const [selectedChatId, setSelectedChatId] = useState(null)
-  const [costs, setCosts] = useState(null)
   const [enabledEditors, setEnabledEditors] = useState(null)
 
   useEffect(() => {
@@ -42,12 +41,10 @@ export default function ProjectDetail() {
     Promise.all([
       fetchProjects(),
       fetchChats({ folder, limit: 1000 }),
-      fetchCosts({ folder }),
-    ]).then(([projects, chatData, costData]) => {
+    ]).then(([projects, chatData]) => {
       const match = projects.find(p => p.folder === folder)
       setProject(match || null)
       setChats(chatData.chats || [])
-      setCosts(costData)
       if (match) setEnabledEditors(new Set(Object.keys(match.editors)))
       setLoading(false)
     })
@@ -153,7 +150,6 @@ export default function ProjectDetail() {
           <KpiCard label="cache read" value={formatNumber(project.totalCacheRead)} sub={`write: ${formatNumber(project.totalCacheWrite)}`} />
         )}
         <KpiCard label="you wrote" value={formatNumber(project.totalUserChars)} sub={`AI: ${formatNumber(project.totalAssistantChars)}`} />
-        <KpiCard label="est. cost" value={costs && costs.totalCost > 0 ? formatCost(costs.totalCost) : '\u2014'} sub={costs && costs.byModel.length > 0 ? `${costs.byModel.length} model${costs.byModel.length !== 1 ? 's' : ''}` : undefined} />
       </div>
 
       {/* Charts row */}
@@ -265,7 +261,6 @@ export default function ProjectDetail() {
                 <th className="text-left py-2 px-3 font-medium">mode</th>
                 <th className="text-left py-2 px-3 font-medium">model</th>
                 <th className="text-left py-2 px-3 font-medium">context</th>
-                <th className="text-right py-2 px-3 font-medium">est. cost</th>
                 <th className="text-left py-2 px-3 font-medium">updated</th>
               </tr>
             </thead>
@@ -303,9 +298,6 @@ export default function ProjectDetail() {
                     ) : (
                       <span style={{ color: 'var(--c-text3)' }}>{c.bubbleCount || 0} msgs</span>
                     )}
-                  </td>
-                  <td className="py-2 px-3 font-mono text-right" style={{ color: c.cost > 0 ? 'var(--c-text2)' : 'var(--c-text3)' }}>
-                    {c.cost > 0 ? formatCost(c.cost) : ''}
                   </td>
                   <td className="py-2 px-3 whitespace-nowrap" style={{ color: 'var(--c-text3)' }}>{formatDate(c.lastUpdatedAt || c.createdAt)}</td>
                 </tr>

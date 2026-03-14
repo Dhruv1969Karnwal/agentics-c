@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { Activity, BarChart3, GitCompare, MessageSquare, FolderOpen, DollarSign, CreditCard, Sun, Moon, RefreshCw, AlertTriangle, Github, Terminal, Database, Users, Plug, Copy, Check, Settings as SettingsIcon, Package, ChevronDown } from 'lucide-react'
-import { fetchOverview, refetchAgents, fetchMode, fetchRelayConfig, getAuthToken, setOnAuthFailure } from './lib/api'
+import { Activity, BarChart3, GitCompare, MessageSquare, FolderOpen, Sun, Moon, Github, Terminal, Users, Plug, Copy, Check, Settings as SettingsIcon, ChevronDown } from 'lucide-react'
+import { fetchOverview, fetchMode, fetchRelayConfig, getAuthToken, setOnAuthFailure } from './lib/api'
 import { useTheme } from './lib/theme'
 import AnimatedLogo from './components/AnimatedLogo'
 import AnimatedLoader from './components/AnimatedLoader'
@@ -12,11 +12,7 @@ import DeepAnalysis from './pages/DeepAnalysis'
 import Compare from './pages/Compare'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
-import CostAnalysis from './pages/CostAnalysis'
-import SqlViewer from './pages/SqlViewer'
-import Artifacts from './pages/Artifacts'
 import Settings from './pages/Settings'
-import Subscriptions from './pages/Subscriptions'
 import RelayDashboard from './pages/RelayDashboard'
 import RelayUserDetail from './pages/RelayUserDetail'
 
@@ -24,10 +20,9 @@ function NavDropdown({ icon: Icon, label, items }) {
   const [open, setOpen] = useState(false)
   const location = useLocation()
   const isActive = items.some(i => i.to === location.pathname)
-  const timeout = useRef(null)
 
-  const enter = () => { clearTimeout(timeout.current); setOpen(true) }
-  const leave = () => { timeout.current = setTimeout(() => setOpen(false), 150) }
+  const enter = () => { setOpen(true) }
+  const leave = () => { setOpen(false) }
 
   return (
     <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
@@ -68,12 +63,9 @@ function NavDropdown({ icon: Icon, label, items }) {
 
 export default function App() {
   const [overview, setOverview] = useState(null)
-  const [refetchState, setRefetchState] = useState(null) // null | { scanned, total }
-  const [live, setLive] = useState(false)
   const [mode, setMode] = useState(null) // 'local' | 'relay'
   const [needsAuth, setNeedsAuth] = useState(false)
   const [authed, setAuthed] = useState(!!getAuthToken())
-  const liveRef = useRef(null)
   const { dark, toggle } = useTheme()
   const [mcpOpen, setMcpOpen] = useState(false)
   const [mcpCopied, setMcpCopied] = useState(false)
@@ -104,34 +96,10 @@ export default function App() {
     if (mode === 'local') refreshOverview()
   }, [mode])
 
-  // Live mode: refetch overview every 60s
-  useEffect(() => {
-    if (live && mode === 'local') {
-      liveRef.current = setInterval(() => {
-        refreshOverview()
-      }, 60000)
-    } else {
-      if (liveRef.current) clearInterval(liveRef.current)
-      liveRef.current = null
-    }
-    return () => { if (liveRef.current) clearInterval(liveRef.current) }
-  }, [live, refreshOverview])
-
-  const handleRefetch = async () => {
-    setRefetchState({ scanned: 0, total: 0 })
-    try {
-      await refetchAgents((p) => setRefetchState({ scanned: p.scanned, total: p.total }))
-      const data = await fetchOverview()
-      setOverview(data)
-    } catch (e) { console.error(e) }
-    setRefetchState(null)
-  }
-
   const isRelay = mode === 'relay'
   const showLogin = isRelay && needsAuth && !authed
 
   const location = useLocation()
-  const isFullWidth = location.pathname === '/artifacts'
 
   const nav = isRelay ? [
     { to: '/', icon: Users, label: 'Team' },
@@ -139,16 +107,10 @@ export default function App() {
     { to: '/', icon: Activity, label: 'Dashboard' },
     { to: '/sessions', icon: MessageSquare, label: 'Sessions' },
     { to: '/projects', icon: FolderOpen, label: 'Projects' },
-    { icon: DollarSign, label: 'Costs', children: [
-      { to: '/costs', icon: DollarSign, label: 'Cost Analysis' },
-      { to: '/subscriptions', icon: CreditCard, label: 'Subscriptions' },
-    ]},
     { icon: BarChart3, label: 'Insights', children: [
       { to: '/analysis', icon: BarChart3, label: 'Deep Analysis' },
       { to: '/compare', icon: GitCompare, label: 'Compare' },
     ]},
-    { to: '/artifacts', icon: Package, label: 'Artifacts' },
-    { to: '/sql', icon: Database, label: 'SQL' },
   ]
 
   if (showLogin) {
@@ -184,37 +146,9 @@ export default function App() {
         <div className="ml-auto flex items-center gap-3">
           {!isRelay && (
             <>
-              <button
-                onClick={() => setLive(!live)}
-                className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] transition"
-                style={{
-                  color: live ? '#22c55e' : 'var(--c-text3)',
-                  border: live ? '1px solid rgba(34,197,94,0.3)' : '1px solid var(--c-border)',
-                  background: live ? 'rgba(34,197,94,0.08)' : 'transparent',
-                }}
-                title={live ? 'Disable live refresh' : 'Enable live refresh (every 60s)'}
-              >
-                <span
-                  className={`inline-block w-1.5 h-1.5 rounded-full ${live ? 'pulse-dot' : ''}`}
-                  style={{ background: live ? '#22c55e' : 'var(--c-text3)' }}
-                />
-                Live
-              </button>
-              <button
-                onClick={handleRefetch}
-                disabled={!!refetchState}
-                className="flex items-center gap-1 px-2 py-0.5 text-[11px] rounded transition hover:bg-[var(--c-card)]"
-                style={{ color: 'var(--c-text2)', border: '1px solid var(--c-border)' }}
-                title="Clear cache and rescan all editors"
-              >
-                <RefreshCw size={10} className={refetchState ? 'animate-spin' : ''} />
-                {refetchState
-                  ? `Refetching (${refetchState.scanned}/${refetchState.total})...`
-                  : 'Refetch'}
-              </button>
-              <span className="text-[11px]" style={{ color: 'var(--c-text2)' }}>
-                {overview ? `${overview.totalChats} sessions` : '...'}
-              </span>
+            <span className="text-[11px]" style={{ color: 'var(--c-text2)' }}>
+              {overview ? `${overview.totalChats} sessions` : '...'}
+            </span>
             </>
           )}
           {isRelay && (
@@ -247,14 +181,8 @@ export default function App() {
         </div>
       </header>
 
-      {refetchState && (
-        <div className="flex items-center gap-2 px-4 py-1.5 text-[12px]" style={{ background: 'rgba(234,179,8,0.08)', borderBottom: '1px solid rgba(234,179,8,0.15)', color: '#ca8a04' }}>
-          <AlertTriangle size={12} />
-          <span>Windsurf, Windsurf Next, and Antigravity require their app to be running during refetch — otherwise their sessions won't be detected.</span>
-        </div>
-      )}
 
-      <main className={isRelay ? 'px-0' : isFullWidth ? 'p-0 overflow-hidden' : 'p-4 max-w-[1400px] mx-auto'}>
+      <main className={isRelay ? 'px-0' : 'p-4 max-w-[1400px] mx-auto'}>
         {mode === null ? (
           <AnimatedLoader label="Loading..." />
         ) : isRelay ? (
@@ -270,18 +198,14 @@ export default function App() {
             <Route path="/projects/detail" element={<ProjectDetail />} />
             <Route path="/sessions" element={<Sessions overview={overview} />} />
             {/* ChatDetail is now a sidebar in Sessions */}
-            <Route path="/costs" element={<CostAnalysis overview={overview} />} />
             <Route path="/analysis" element={<DeepAnalysis overview={overview} />} />
             <Route path="/compare" element={<Compare overview={overview} />} />
-            <Route path="/subscriptions" element={<Subscriptions />} />
-            <Route path="/artifacts" element={<Artifacts />} />
-            <Route path="/sql" element={<SqlViewer />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         )}
       </main>
 
-      <footer className={`border-t mt-8 px-4 py-3 flex items-center justify-between text-[11px]${isFullWidth ? ' hidden' : ''}`} style={{ borderColor: 'var(--c-border)', color: 'var(--c-text3)' }}>
+      <footer className="border-t mt-8 px-4 py-3 flex items-center justify-between text-[11px]" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text3)' }}>
         <div className="flex items-center gap-3">
           <a href="https://github.com/f/agentlytics" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--c-text)] transition">
             <Github size={11} />
