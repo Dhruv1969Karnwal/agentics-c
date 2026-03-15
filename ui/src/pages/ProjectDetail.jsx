@@ -11,7 +11,6 @@ import EditorIcon from '../components/EditorIcon'
 import SectionTitle from '../components/SectionTitle'
 import ChatSidebar from '../components/ChatSidebar'
 import AnimatedLoader from '../components/AnimatedLoader'
-import AiAuditCard from '../components/AiAuditCard'
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement)
 
@@ -231,9 +230,6 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* AI Readiness Audit */}
-      {console.log('Rendering AiAuditCard, folder:', folder)}
-      <AiAuditCard folder={folder} />
 
       {/* Sessions */}
       <div>
