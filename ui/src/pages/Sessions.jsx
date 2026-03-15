@@ -239,7 +239,10 @@ export default function Sessions({ overview }) {
   }
 
   const SessionRow = ({ c }) => (
+    <>
+    {/* {console.log("c: ", c)} */}
     <tr
+    
       key={c.id}
       className="cursor-pointer transition"
       style={{ borderBottom: '1px solid var(--c-border)' }}
@@ -255,7 +258,7 @@ export default function Sessions({ overview }) {
       </td>
       <td className="py-2 px-3 font-medium truncate max-w-[280px] text-[12px]" style={{ color: 'var(--c-white)' }}>
         {c.name || <span style={{ color: 'var(--c-text3)' }}>Untitled</span>}
-        {c.encrypted && <span className="ml-1.5 text-[10px] text-yellow-500/60">locked</span>}
+        {/* {c.encrypted && <span className="ml-1.5 text-[10px] text-yellow-500/60">locked</span>} */}
       </td>
       {!groupByProject && (
         <td className="py-2 px-3 truncate max-w-[160px] text-[12px]" style={{ color: 'var(--c-text2)' }} title={c.folder}>
@@ -273,22 +276,23 @@ export default function Sessions({ overview }) {
         {c.topModel || ''}
       </td>
       <td className="py-2 px-3 text-[12px]">
-        {c.bubbleCount >= 500 ? (
+        {c.bubble_count >= 500 ? (
           <span className="inline-flex items-center gap-0.5 font-bold" style={{ color: '#ef4444' }}>
-            <AlertTriangle size={9} />{c.bubbleCount}
+            <AlertTriangle size={9} />{c.bubble_count}
           </span>
-        ) : c.bubbleCount >= 200 ? (
+        ) : c.bubble_count >= 200 ? (
           <span className="inline-flex items-center gap-0.5 font-bold" style={{ color: '#f59e0b' }}>
-            <AlertTriangle size={9} />{c.bubbleCount}
+            <AlertTriangle size={9} />{c.bubble_count}
           </span>
         ) : (
-          <span style={{ color: 'var(--c-text3)' }}>{c.bubbleCount || 0}</span>
+          <span style={{ color: 'var(--c-text3)' }}>{c.bubble_count || 0}</span>
         )}
       </td>
       <td className="py-2 px-3 text-[12px] whitespace-nowrap" style={{ color: 'var(--c-text3)' }}>
-        {formatDate(c.lastUpdatedAt || c.createdAt)}
+        {formatDate(c.last_updated_at || c.created_at)}
       </td>
     </tr>
+    </>
   )
 
   return (
@@ -525,7 +529,7 @@ export default function Sessions({ overview }) {
       )}
 
       {/* Chat sidebar */}
-      <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} />
+      {/* <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} /> */}
     </div>
   )
 }

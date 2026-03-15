@@ -63,10 +63,15 @@ class CodeMateAdapter(BaseAdapter):
             first_ts = history[0].get('ts')
             last_ts = history[-1].get('ts', first_ts)
 
+            ui_messages_path = os.path.join(task_dir, 'ui_messages.json')
+            chat_name = self._extract_chat_name_from_ui(ui_messages_path)
+            if not chat_name:
+                chat_name = self._extract_chat_name(history)
+
             chats.append(Chat(
                 source=ADAPTER_NAME,
                 composer_id=task_id,
-                name=self._extract_chat_name(history),
+                name=chat_name,
                 created_at=first_ts,
                 last_updated_at=last_ts,
                 mode='agent',
@@ -193,6 +198,17 @@ class CodeMateAdapter(BaseAdapter):
             match = re.search(r'<task>([\s\S]*?)</task>', text)
             if match:
                 return match.group(1).strip()[:120]
+        return None
+
+    def _extract_chat_name_from_ui(self, ui_messages_path: str) -> Optional[str]:
+        if not os.path.exists(ui_messages_path):
+            return None
+        ui_msgs = self._read_json_file(ui_messages_path)
+        if not isinstance(ui_msgs, list):
+            return None
+        for m in ui_msgs:
+            if m.get('type') == 'say' and m.get('text'):
+                return m['text'][:120].strip()
         return None
 
     def _extract_metadata_tool_calls(self, metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
