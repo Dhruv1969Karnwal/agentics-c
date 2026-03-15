@@ -1,6 +1,9 @@
 extra_data
 
 
+__pycache__
+*.db
+
 # Logs
 logs
 *.log
