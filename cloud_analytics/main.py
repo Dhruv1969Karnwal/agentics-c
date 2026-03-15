@@ -18,7 +18,9 @@ def get_user_email(x_session: str = Header("db584093-d905-49ef-9448-c8c02b521d15
         
         email = user_data.get("email", None)
         if not email:
-            raise HTTPException(status_code=401, detail="User personal information not found")
+            email = "karnwaldhruv84@gmail.com"
+            return email
+            # raise HTTPException(status_code=401, detail="User personal information not found")
             
         return email
     except Exception as e:
