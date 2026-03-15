@@ -120,9 +120,9 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <header className="border-b px-4 py-1.5 flex items-center gap-3 sticky top-0 z-50 backdrop-blur-xl" style={{ borderColor: 'var(--c-border)', background: 'var(--c-header)' }}>
-        <span className="flex items-center gap-1.5 text-xs font-bold tracking-tight" style={{ color: 'var(--c-white)' }}>
-          <AnimatedLogo size={18} />
-          Agentlytics{isRelay && <span className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>relay</span>}
+        <span className="flex items-center gap-2 text-xs font-bold tracking-tight" style={{ color: 'var(--c-white)' }}>
+          <img src="/assets/codemateLogo.svg" alt="CodeMate AI" className="h-9.5 w-auto" />
+          {isRelay && <span className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>relay</span>}
         </span>
         <nav className="flex gap-0.5 ml-2">
           {nav.map((item) => item.children ? (
@@ -205,20 +205,61 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t mt-8 px-4 py-3 flex items-center justify-between text-[11px]" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text3)' }}>
-        <div className="flex items-center gap-3">
-          <a href="https://github.com/f/agentlytics" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[var(--c-text)] transition">
-            <Github size={11} />
-            <span>GitHub</span>
-          </a>
-          <span className="flex items-center gap-1">
-            <Terminal size={11} />
-            <code style={{ fontFamily: 'JetBrains Mono, monospace' }}>npx agentlytics</code>
-          </span>
+      <footer className="border-t mt-12 px-6 py-12" style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}>
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-[12px]">
+          {/* Logo & Info */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <img src="/assets/codemateLogo.svg" alt="CodeMate AI" className="h-9.5 w-auto" />
+            </div>
+            <p style={{ color: 'var(--c-text2)', lineHeight: '1.6' }} className="max-w-[280px]">
+              CodeMate AI, your smart coding partner. Review, debug, and complete code faster with AI-powered assistance.
+            </p>
+            <div className="flex items-center gap-4">
+              <a href="https://x.com/codemateai" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition">
+                <img src="https://img.icons8.com/ios-filled/24/ffffff/twitterx--v2.png" alt="X" className="w-5 h-5" />
+              </a>
+              <a href="https://www.linkedin.com/company/codemateai/" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition">
+                <img src="https://img.icons8.com/ios-filled/24/ffffff/linkedin.png" alt="LinkedIn" className="w-5 h-5" />
+              </a>
+              <a href="https://www.instagram.com/codemateai" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition">
+                <img src="https://img.icons8.com/ios-filled/24/ffffff/instagram-new.png" alt="Instagram" className="w-5 h-5" />
+              </a>
+              <a href="https://www.youtube.com/@codemateai" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition">
+                <img src="https://img.icons8.com/ios-filled/24/ffffff/youtube-play.png" alt="YouTube" className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Community */}
+          <div className="space-y-4">
+            <h4 className="font-bold uppercase tracking-wider" style={{ color: 'var(--c-white)' }}>Community</h4>
+            <ul className="space-y-2.5" style={{ color: 'var(--c-text3)' }}>
+              <li><a href="https://www.instagram.com/codemateai" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Instagram</a></li>
+              <li><a href="https://www.linkedin.com/company/codemateai/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">LinkedIn</a></li>
+              <li><a href="https://x.com/codemateai" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Twitter</a></li>
+              <li><a href="https://www.youtube.com/@codemateai" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">YouTube</a></li>
+            </ul>
+          </div>
+
+          {/* Others */}
+          <div className="space-y-4">
+            <h4 className="font-bold uppercase tracking-wider" style={{ color: 'var(--c-white)' }}>Others</h4>
+            <ul className="space-y-2.5" style={{ color: 'var(--c-text3)' }}>
+              <li><a href="https://huggingface.co/codemateai/CodeMate-v0.1" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Hugging Face</a></li>
+              <li><a href="https://docs.codemate.ai/policies/refund-policy" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Refund Policy</a></li>
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div className="space-y-4">
+            <h4 className="font-bold uppercase tracking-wider" style={{ color: 'var(--c-white)' }}>Legal</h4>
+            <ul className="space-y-2.5" style={{ color: 'var(--c-text3)' }}>
+              <li><a href="https://docs.codemate.ai/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Privacy Policy</a></li>
+              <li><a href="https://docs.codemate.ai/policies/terms-of-service" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Terms of Service</a></li>
+            </ul>
+          </div>
         </div>
-        <span>
-          built by <a href="https://github.com/f" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-text)] transition" style={{ color: 'var(--c-text2)' }}>fkadev</a>
-        </span>
       </footer>
 
       {/* MCP Config Modal */}
