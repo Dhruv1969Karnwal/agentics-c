@@ -173,7 +173,7 @@ export default function Dashboard({ overview }) {
         <DateRangePicker value={dateRange} onChange={setDateRange} />
         <button
           onClick={() => setShareOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1 text-[12px] rounded-md transition hover:opacity-80"
+          className="flex items-center gap-1.5 px-3 py-1 text-[12px] rounded-md transition hover:opacity-80 hidden"
           style={{ background: '#6366f1', color: '#fff' }}
         >
           <Share2 size={12} />

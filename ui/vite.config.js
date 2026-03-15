@@ -11,7 +11,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/relay': 'http://localhost:4638',
-      '/api': process.env.RELAY ? 'http://localhost:4638' : 'http://localhost:4637',
+      '/api': 'http://localhost:8000',
     },
   },
 })
