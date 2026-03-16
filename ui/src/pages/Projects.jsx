@@ -17,30 +17,43 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 const MONO = 'JetBrains Mono, monospace'
 const MODEL_COLORS = ['#6366f1', '#a78bfa', '#818cf8', '#c084fc', '#e879f9', '#f472b6', '#fb7185', '#f87171', '#fbbf24', '#34d399']
 
-export default function Projects({ overview }) {
+export default function Projects({ overview, selectedEditor, setSelectedEditor }) {
   const { dark } = useTheme()
   const txtColor = dark ? '#888' : '#555'
   const txtDim = dark ? '#555' : '#999'
   const gridColor = dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.06)'
   const [projects, setProjects] = useState(null)
   const [search, setSearch] = useState('')
-  const [editorFilter, setEditorFilter] = useState('')
   const [dateRange, setDateRange] = useState(null)
-  const navigate = useNavigate()
   const editors = overview?.editors || []
+
+
+  const navigate = useNavigate()
+
 
   useEffect(() => {
     const dateParams = dateRangeToApiParams(dateRange)
+    const params = { ...dateParams }
+    if (selectedEditor !== 'all') params.editor = selectedEditor
+    
     Promise.all([
-      fetchProjects(dateParams),
+      fetchProjects(params),
     ]).then(([p]) => { setProjects(p) })
-  }, [dateRange])
+  }, [dateRange, selectedEditor])
 
   if (!projects) return <AnimatedLoader label="Loading projects..." />
 
   const filtered = projects.filter(p => {
-    if (editorFilter && !p.editors[editorFilter]) return false
-    if (search && !p.folder.toLowerCase().includes(search.toLowerCase()) && !p.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (selectedEditor !== 'all' && !p.editors[selectedEditor]) return false
+    
+    if (search) {
+      const q = search.toLowerCase()
+      const nameMatch = p.name.toLowerCase().includes(q)
+      const lastFolderPart = p.folder.split(/[/\\]/).pop().toLowerCase()
+      const folderMatch = lastFolderPart.includes(q)
+      
+      if (!nameMatch && !folderMatch) return false
+    }
     return true
   })
 
@@ -137,17 +150,20 @@ export default function Projects({ overview }) {
 
       {/* Filters */}
       <div className="flex items-center gap-2">
-        <select
-          value={editorFilter}
-          onChange={e => setEditorFilter(e.target.value)}
-          className="px-2 py-1.5 text-[12px] outline-none rounded-sm"
-          style={{ background: 'var(--c-bg3)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
-        >
-          <option value="">All Editors</option>
-          {editors.map(e => (
-            <option key={e.id} value={e.id}>{editorLabel(e.id)}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={selectedEditor}
+            onChange={e => setSelectedEditor(e.target.value)}
+            className="appearance-none pl-8 pr-8 py-1.5 text-[12px] outline-none rounded-sm cursor-pointer transition hover:bg-[var(--c-bg2)]"
+            style={{ background: 'var(--c-bg3)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+          >
+            <option value="all">All Editors</option>
+            {editors.map(e => (
+              <option key={e.id} value={e.id}>{editorLabel(e.id)}</option>
+            ))}
+          </select>
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none hidden" style={{ color: 'var(--c-text3)', fontSize: '10px' }}>Filter:</div>
+        </div>
         <div className="relative max-w-sm flex-1">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text3)' }} />
           <input

@@ -104,6 +104,20 @@ def get_overview(
     projects_q = apply_date_filter(projects_q, Chat, dateFrom, dateTo)
     projects = projects_q.group_by(Chat.folder).order_by(desc('count')).limit(20).all()
     
+    project_list = []
+    for p in projects:
+        if not p.folder: continue
+        ed_q = db.query(Chat.source, func.count(Chat.id))\
+            .filter(Chat.user_email == email, Chat.folder == p.folder)
+        ed_q = apply_date_filter(ed_q, Chat, dateFrom, dateTo)
+        ed_rows = ed_q.group_by(Chat.source).all()
+        project_list.append({
+            "name": "/".join(p.folder.replace("\\", "/").split("/")[-2:]),
+            "fullPath": p.folder,
+            "count": p.count,
+            "editors": {r[0]: r[1] for r in ed_rows}
+        })
+
     # Oldest/Newest
     ts_expr = func.coalesce(Chat.last_updated_at, Chat.created_at)
     time_bounds = db.query(func.min(ts_expr), func.max(ts_expr))\
@@ -118,11 +132,7 @@ def get_overview(
         "editors": [{"id": e.source, "count": e.count} for e in editors],
         "byMode": {m.mode: m.count for m in modes},
         "byMonth": sorted(month_map.values(), key=lambda x: x["month"]),
-        "topProjects": [{
-            "name": "/".join(p.folder.replace("\\", "/").split("/")[-2:]),
-            "fullPath": p.folder,
-            "count": p.count
-        } for p in projects if p.folder],
+        "topProjects": project_list,
         "oldestChat": oldest,
         "newestChat": newest
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import { Activity, BarChart3, GitCompare, MessageSquare, FolderOpen, Sun, Moon, Github, Terminal, Users, Plug, Copy, Check, Settings as SettingsIcon, ChevronDown } from 'lucide-react'
 import { fetchOverview, fetchMode, fetchRelayConfig, getAuthToken, setOnAuthFailure } from './lib/api'
@@ -18,11 +18,19 @@ import RelayUserDetail from './pages/RelayUserDetail'
 
 function NavDropdown({ icon: Icon, label, items }) {
   const [open, setOpen] = useState(false)
+  const timeoutRef = useRef(null)
   const location = useLocation()
   const isActive = items.some(i => i.to === location.pathname)
 
-  const enter = () => { setOpen(true) }
-  const leave = () => { setOpen(false) }
+  const enter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    setOpen(true)
+  }
+  const leave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setOpen(false)
+    }, 150)
+  }
 
   return (
     <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
@@ -37,7 +45,7 @@ function NavDropdown({ icon: Icon, label, items }) {
       </button>
       {open && (
         <div
-          className="absolute top-full left-0 mt-1 py-1 rounded shadow-lg min-w-[160px] z-[100]"
+          className="absolute top-full left-0 py-1 rounded shadow-lg min-w-[160px] z-[100]"
           style={{ background: 'var(--c-bg)', border: '1px solid var(--c-border)' }}
         >
           {items.map(({ to, icon: SubIcon, label: subLabel }) => (
@@ -88,18 +96,29 @@ export default function App() {
     }
   }, [mode, authed])
 
+  const [selectedEditor, setSelectedEditor] = useState(() => {
+    const saved = localStorage.getItem('agentlytics_selected_editor')
+    if (saved === 'vsc-cora') return 'vs-code-cora'
+    if (saved === 'jb-cora') return 'jet-brains-cora'
+    return saved || 'all'
+  })
+
   const refreshOverview = useCallback(() => {
-    fetchOverview().then(setOverview).catch(() => {})
-  }, [])
+    fetchOverview({ editor: selectedEditor !== 'all' ? selectedEditor : undefined }).then(setOverview).catch(() => {})
+  }, [selectedEditor])
 
   useEffect(() => {
     if (mode === 'local') refreshOverview()
-  }, [mode])
+  }, [mode, refreshOverview])
+
+  useEffect(() => {
+    localStorage.setItem('agentlytics_selected_editor', selectedEditor)
+  }, [selectedEditor])
 
   const isRelay = mode === 'relay'
   const showLogin = isRelay && needsAuth && !authed
 
-  const location = useLocation()
+
 
   const nav = isRelay ? [
     { to: '/', icon: Users, label: 'Team' },
@@ -111,6 +130,12 @@ export default function App() {
       { to: '/analysis', icon: BarChart3, label: 'Deep Analysis' },
       { to: '/compare', icon: GitCompare, label: 'Compare' },
     ]},
+  ]
+
+  const editorOptions = [
+    { value: 'all', label: 'All Editors' },
+    { value: 'vs-code-cora', label: 'VS Code Cora' },
+    { value: 'jet-brains-cora', label: 'JetBrains Cora' }
   ]
 
   if (showLogin) {
@@ -146,11 +171,24 @@ export default function App() {
         <div className="ml-auto flex items-center gap-3">
           {!isRelay && (
             <>
+            <div className="relative flex items-center hidden">
+              <select
+                value={selectedEditor}
+                onChange={(e) => setSelectedEditor(e.target.value)}
+                className="appearance-none bg-[var(--c-bg3)] text-[var(--c-text)] text-[11px] px-2 py-1 pr-6 rounded border border-[var(--c-border)] focus:outline-none cursor-pointer hover:bg-[var(--c-card)] transition"
+              >
+                {editorOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <ChevronDown size={10} className="absolute right-2 pointer-events-none text-[var(--c-text3)]" />
+            </div>
             <span className="text-[11px]" style={{ color: 'var(--c-text2)' }}>
               {overview ? `${overview.totalChats} sessions` : '...'}
             </span>
             </>
           )}
+
           {isRelay && (
             <button
               onClick={() => { setMcpOpen(true); setMcpCopied(false) }}
@@ -164,7 +202,7 @@ export default function App() {
           )}
           <NavLink
             to="/settings"
-            className="p-1 rounded transition hover:bg-[var(--c-card)]"
+            className="p-1 rounded transition hover:bg-[var(--c-card)] hidden"
             style={({ isActive }) => ({ color: isActive ? '#6366f1' : 'var(--c-text2)' })}
             title="Settings"
           >
@@ -193,13 +231,13 @@ export default function App() {
           </Routes>
         ) : (
           <Routes>
-            <Route path="/" element={<Dashboard overview={overview} />} />
-            <Route path="/projects" element={<Projects overview={overview} />} />
-            <Route path="/projects/detail" element={<ProjectDetail />} />
-            <Route path="/sessions" element={<Sessions overview={overview} />} />
+            <Route path="/" element={<Dashboard overview={overview} selectedEditor={selectedEditor} />} />
+            <Route path="/projects" element={<Projects overview={overview} selectedEditor={selectedEditor} setSelectedEditor={setSelectedEditor} />} />
+            <Route path="/projects/detail" element={<ProjectDetail selectedEditor={selectedEditor} />} />
+            <Route path="/sessions" element={<Sessions overview={overview} selectedEditor={selectedEditor} />} />
             {/* ChatDetail is now a sidebar in Sessions */}
-            <Route path="/analysis" element={<DeepAnalysis overview={overview} />} />
-            <Route path="/compare" element={<Compare overview={overview} />} />
+            <Route path="/analysis" element={<DeepAnalysis overview={overview} selectedEditor={selectedEditor} />} />
+            <Route path="/compare" element={<Compare overview={overview} selectedEditor={selectedEditor} />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         )}

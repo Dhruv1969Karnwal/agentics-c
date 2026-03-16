@@ -25,12 +25,12 @@ const MODE_COLORS = {
   copilot: '#f59e0b', thread: '#ec4899', opencode: '#f43f5e', claude: '#f97316',
 }
 
-export default function Dashboard({ overview }) {
+export default function Dashboard({ overview, selectedEditor: globalEditor }) {
   const navigate = useNavigate()
   const [dailyData, setDailyData] = useState(null)
   const [filteredData, setFilteredData] = useState(null)
   const [stats, setStats] = useState(null)
-  const [selectedEditor, setSelectedEditor] = useState(null)
+  const [localEditor, setLocalEditor] = useState(null)
   const [dateRange, setDateRange] = useState(null)
   const { dark } = useTheme()
   const [shareOpen, setShareOpen] = useState(false)
@@ -53,32 +53,34 @@ export default function Dashboard({ overview }) {
   }
   const noLegend = { legend: { display: false }, tooltip: { bodyFont: { family: MONO, size: 10 }, titleFont: { family: MONO, size: 10 } } }
 
+  const effectiveEditor = (globalEditor && globalEditor !== 'all') ? globalEditor : localEditor
+
   useEffect(() => {
     const dateParams = dateRangeToApiParams(dateRange)
     const chatParams = { limit: 500, named: false, ...dateParams }
-    if (selectedEditor) chatParams.editor = selectedEditor
+    if (effectiveEditor) chatParams.editor = effectiveEditor
 
     fetchChats(chatParams).then(r => {
       const big = (r.chats || []).filter(c => c.bubbleCount >= 100).sort((a, b) => b.bubbleCount - a.bubbleCount)
       setLargeContextChats(big)
     })
 
-    if (!selectedEditor) {
+    if (!effectiveEditor) {
       setFilteredData(null)
       fetchDailyActivity(dateParams).then(setDailyData)
       fetchDashboardStats(dateParams).then(setStats)
       return
     }
     Promise.all([
-      fetchOverviewApi({ editor: selectedEditor, ...dateParams }),
-      fetchDailyActivity({ editor: selectedEditor, ...dateParams }),
-      fetchDashboardStats({ editor: selectedEditor, ...dateParams }),
+      fetchOverviewApi({ editor: effectiveEditor, ...dateParams }),
+      fetchDailyActivity({ editor: effectiveEditor, ...dateParams }),
+      fetchDashboardStats({ editor: effectiveEditor, ...dateParams }),
     ]).then(([ov, daily, st]) => {
       setFilteredData(ov)
       setDailyData(daily)
       setStats(st)
     })
-  }, [selectedEditor, dateRange])
+  }, [effectiveEditor, dateRange])
 
   if (!overview) return <AnimatedLoader label="Loading dashboard..." />
 
@@ -87,7 +89,7 @@ export default function Dashboard({ overview }) {
   const daysSpan = d.oldestChat && d.newestChat ? Math.max(1, Math.round((d.newestChat - d.oldestChat) / 86400000)) : 0
   const thisMonth = d.byMonth.length > 0 ? d.byMonth[d.byMonth.length - 1] : null
   const modes = Object.entries(d.byMode).sort((a, b) => b[1] - a[1])
-  const sel = selectedEditor ? allEditors.find(e => e.id === selectedEditor) : null
+  const sel = effectiveEditor ? allEditors.find(e => e.id === effectiveEditor) : null
 
   const editorChartData = {
     labels: allEditors.map(e => editorLabel(e.id)),
@@ -185,7 +187,7 @@ export default function Dashboard({ overview }) {
       <div className="card p-3">
         <div className="flex items-center flex-wrap gap-1.5">
           {allEditors.map(e => {
-            const isSelected = selectedEditor === e.id
+            const isSelected = effectiveEditor === e.id
             return (
               <button
                 key={e.id}
@@ -193,10 +195,10 @@ export default function Dashboard({ overview }) {
                 style={{
                   border: isSelected ? `1.5px solid ${editorColor(e.id)}` : '1px solid var(--c-border)',
                   background: isSelected ? editorColor(e.id) + '15' : 'transparent',
-                  opacity: selectedEditor && !isSelected ? 0.4 : 1,
+                  opacity: effectiveEditor && !isSelected ? 0.4 : 1,
                   color: 'var(--c-text)',
                 }}
-                onClick={() => setSelectedEditor(isSelected ? null : e.id)}
+                onClick={() => setLocalEditor(isSelected ? null : e.id)}
               >
                 <EditorIcon source={e.id} size={14} />
                 <span style={{ color: 'var(--c-text2)' }}>{editorLabel(e.id)}</span>
@@ -205,12 +207,12 @@ export default function Dashboard({ overview }) {
             )
           })}
         </div>
-        {selectedEditor && sel && (
+        {effectiveEditor && sel && (
           <div className="mt-2 flex items-center gap-2">
-            <button onClick={() => navigate(`/sessions?editor=${selectedEditor}`)} className="flex items-center gap-1 text-[12px] px-2.5 py-1 transition" style={{ color: 'var(--c-accent)', border: '1px solid var(--c-border)' }}>
+            <button onClick={() => navigate(`/sessions?editor=${effectiveEditor}`)} className="flex items-center gap-1 text-[12px] px-2.5 py-1 transition" style={{ color: 'var(--c-accent)', border: '1px solid var(--c-border)' }}>
               Show Sessions <ArrowRight size={11} />
             </button>
-            <button onClick={() => setSelectedEditor(null)} className="flex items-center gap-1 text-[12px] px-2.5 py-1 transition" style={{ color: 'var(--c-text2)', border: '1px solid var(--c-border)' }}>
+            <button onClick={() => setLocalEditor(null)} className="flex items-center gap-1 text-[12px] px-2.5 py-1 transition" style={{ color: 'var(--c-text2)', border: '1px solid var(--c-border)' }}>
               <X size={9} /> Clear
             </button>
           </div>
@@ -220,7 +222,7 @@ export default function Dashboard({ overview }) {
 
       {/* KPIs — compact single row */}
       <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}>
-        <KpiCard label="sessions" value={formatNumber(d.totalChats)} sub={sel ? editorLabel(sel.id) : `${allEditors.length} editors`} onClick={() => navigate(selectedEditor ? `/sessions?editor=${selectedEditor}` : '/sessions')} />
+        <KpiCard label="sessions" value={formatNumber(d.totalChats)} sub={sel ? editorLabel(sel.id) : `${allEditors.length} editors`} onClick={() => navigate(effectiveEditor ? `/sessions?editor=${effectiveEditor}` : '/sessions')} />
         <KpiCard label="projects" value={d.topProjects.length} sub={`${daysSpan}d span`} onClick={() => navigate('/projects')} />
         <KpiCard label="this month" value={thisMonth ? thisMonth.count : 0} sub={thisMonth ? thisMonth.month : ''} onClick={() => navigate('/sessions')} />
         {stats && <>
@@ -504,8 +506,8 @@ export default function Dashboard({ overview }) {
           </div>
         )}
       </div>
-      <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} />
-      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} />
+      {/* <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} /> */}
+      {/* <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} /> */}
     </div>
   )
 }

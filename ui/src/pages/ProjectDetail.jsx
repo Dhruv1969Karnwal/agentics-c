@@ -18,7 +18,7 @@ const MONO = 'JetBrains Mono, monospace'
 const MODEL_COLORS = ['#6366f1', '#a78bfa', '#818cf8', '#c084fc', '#e879f9', '#f472b6', '#fb7185', '#f87171', '#fbbf24', '#34d399']
 const TOOL_COLORS = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#d1fae5', '#ecfdf5', '#b8f0d8', '#7ce0b8', '#4ade80', '#22c55e']
 
-export default function ProjectDetail() {
+export default function ProjectDetail({ selectedEditor }) {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const folder = searchParams.get('folder')
@@ -32,22 +32,34 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true)
   const [chatSearch, setChatSearch] = useState('')
   const [selectedChatId, setSelectedChatId] = useState(null)
-  const [enabledEditors, setEnabledEditors] = useState(null)
+  
+  const initialEditors = useMemo(() => {
+    if (selectedEditor === 'all') return null
+    return new Set([selectedEditor])
+  }, [selectedEditor])
+
+  const [enabledEditors, setEnabledEditors] = useState(initialEditors)
+
+  useEffect(() => {
+    setEnabledEditors(initialEditors)
+  }, [initialEditors])
+
 
   useEffect(() => {
     if (!folder) return
     setLoading(true)
+    const params = selectedEditor !== 'all' ? { editor: selectedEditor } : {}
+    
     Promise.all([
-      fetchProjects(),
-      fetchChats({ folder, limit: 1000 }),
+      fetchProjects(params),
+      fetchChats({ folder, limit: 1000, ...(selectedEditor !== 'all' ? { editor: selectedEditor } : {}) }),
     ]).then(([projects, chatData]) => {
       const match = projects.find(p => p.folder === folder)
       setProject(match || null)
       setChats(chatData.chats || [])
-      if (match) setEnabledEditors(new Set(Object.keys(match.editors)))
       setLoading(false)
     })
-  }, [folder])
+  }, [folder, selectedEditor])
 
   const editorFilteredChats = useMemo(() => {
     if (!enabledEditors) return chats
@@ -157,7 +169,8 @@ export default function ProjectDetail() {
         <div className="card p-3">
           <SectionTitle>editors</SectionTitle>
           <div className="space-y-1.5 mt-1">
-            {editorEntries.map(([e, c]) => {
+            {editorEntries.map(([e]) => {
+
               const checked = enabledEditors ? enabledEditors.has(e) : true
               const count = fEditorCounts[e] || 0
               return (
@@ -283,19 +296,19 @@ export default function ProjectDetail() {
                   <td className="py-2 px-3" style={{ color: 'var(--c-text2)' }}>{c.mode || ''}</td>
                   <td className="py-2 px-3 font-mono truncate max-w-[150px]" style={{ color: 'var(--c-text2)' }} title={c.topModel || ''}>{c.topModel || ''}</td>
                   <td className="py-2 px-3">
-                    {c.bubbleCount >= 500 ? (
+                    {c.bubble_count >= 500 ? (
                       <span className="inline-flex items-center gap-0.5 font-bold" style={{ color: '#ef4444' }}>
-                        <AlertTriangle size={9} />{c.bubbleCount} msgs
+                        <AlertTriangle size={9} />{c.bubble_count} msgs
                       </span>
-                    ) : c.bubbleCount >= 100 ? (
+                    ) : c.bubble_count >= 100 ? (
                       <span className="inline-flex items-center gap-0.5 font-bold" style={{ color: '#f59e0b' }}>
-                        <AlertTriangle size={9} />{c.bubbleCount} msgs
+                        <AlertTriangle size={9} />{c.bubble_count} msgs
                       </span>
                     ) : (
-                      <span style={{ color: 'var(--c-text3)' }}>{c.bubbleCount || 0} msgs</span>
+                      <span style={{ color: 'var(--c-text3)' }}>{c.bubble_count || 0} msgs</span>
                     )}
                   </td>
-                  <td className="py-2 px-3 whitespace-nowrap" style={{ color: 'var(--c-text3)' }}>{formatDate(c.lastUpdatedAt || c.createdAt)}</td>
+                  <td className="py-2 px-3 whitespace-nowrap" style={{ color: 'var(--c-text3)' }}>{formatDate(c.last_updated_at || c.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -307,7 +320,7 @@ export default function ProjectDetail() {
       </div>
 
       {/* Chat sidebar */}
-      <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} />
+      {/* <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} /> */}
     </div>
   )
 }

@@ -1,46 +1,58 @@
 import os
 import json
 import re
+import platform
 from typing import List, Dict, Any, Optional
 from .base import BaseAdapter
 from ..models import Chat, Message
 
-ADAPTER_NAME = 'codemate-agent'
-LABELS = {ADAPTER_NAME: 'CodeMate Agent'}
 CHARS_PER_TOKEN = 4
 SYSTEM_PROMPT_TOKENS = 25000
 
-# This would ideally be localized or passed in, but hardcoded for now as per JS
-CODEMATE_TASKS_DIR = os.path.join(
-    os.path.expanduser("~"),
-    'Desktop',
-    'CodeMate.AI',
-    'extra_research',
-    'agentlytics',
-    'extra_data'
-)
+def get_vscode_cora_tasks_dir() -> str:
+    home = os.path.expanduser("~")
+    system = platform.system()
+
+    if system == "Windows":
+        appdata = os.environ.get("APPDATA") or os.path.join(home, "AppData", "Roaming")
+        return os.path.join(appdata, "Code", "User", "globalStorage", "codemateai.codemate-agent", "tasks")
+    elif system == "Darwin":
+        return os.path.join(home, "Library", "Application Support", "Code", "User", "globalStorage", "codemate-ai.cora-agent", "tasks")
+    else:
+        # Linux and others
+        return os.path.join(home, ".config", "Code", "User", "globalStorage", "codemate-ai.cora-agent", "tasks")
+
+def get_jetbrains_cora_tasks_dir() -> str:
+    home = os.path.expanduser("~")
+    return os.path.join(home, ".cora", "globalStorage", "codemateai.codemate-agent", "tasks")
 
 class CodeMateAdapter(BaseAdapter):
+    def __init__(self, name: str, label: str, tasks_dir: str):
+        self._name = name
+        self._label = label
+        self._tasks_dir = tasks_dir
+        self._labels = {name: label}
+
     @property
     def name(self) -> str:
-        return ADAPTER_NAME
+        return self._name
 
     @property
     def labels(self) -> Dict[str, str]:
-        return LABELS
+        return self._labels
 
     def get_chats(self) -> List[Chat]:
-        if not os.path.exists(CODEMATE_TASKS_DIR):
+        if not os.path.exists(self._tasks_dir):
             return []
 
         try:
-            task_ids = os.listdir(CODEMATE_TASKS_DIR)
+            task_ids = os.listdir(self._tasks_dir)
         except Exception:
             return []
 
         chats = []
         for task_id in task_ids:
-            task_dir = os.path.join(CODEMATE_TASKS_DIR, task_id)
+            task_dir = os.path.join(self._tasks_dir, task_id)
             if not os.path.isdir(task_dir):
                 continue
 
@@ -69,7 +81,7 @@ class CodeMateAdapter(BaseAdapter):
                 chat_name = self._extract_chat_name(history)
 
             chats.append(Chat(
-                source=ADAPTER_NAME,
+                source=self._name,
                 composer_id=task_id,
                 name=chat_name,
                 created_at=first_ts,
@@ -237,3 +249,7 @@ class CodeMateAdapter(BaseAdapter):
         
         cache_read = SYSTEM_PROMPT_TOKENS + prior_tokens
         return {"input_tokens": cache_read + turn_tokens, "cache_read": cache_read, "cache_write": turn_tokens}
+
+# Create instances for each supported editor
+vs_code_cora = CodeMateAdapter('vs-code-cora', 'VS Code Cora', get_vscode_cora_tasks_dir())
+jet_brains_cora = CodeMateAdapter('jet-brains-cora', 'JetBrains Cora', get_jetbrains_cora_tasks_dir())

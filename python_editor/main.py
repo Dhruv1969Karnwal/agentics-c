@@ -3,44 +3,11 @@ import os
 import json
 from typing import List, Dict, Any, Optional
 from .models import Message, Chat
-from .adapters.codemate import CodeMateAdapter
-from .utils.platform import get_app_data_path
+from .adapters.codemate import vs_code_cora, jet_brains_cora, CodeMateAdapter
 from .analytics_client import AnalyticsClient
 import time
+import threading
 
-# def main():
-#     print("--- Agentlytics Python Collector ---")
-    
-#     # In a real scenario, we might iterate over multiple adapters
-#     # For now, we focus on CodeMate as requested
-#     adapter = CodeMateAdapter()
-#     # Default session for testing, can be passed via env or args in real usage
-#     headers = {"x-session": "db584093-d905-49ef-9448-c8c02b521d15"}
-#     analytics = AnalyticsClient(headers=headers)
-    
-#     print(f"Scanning sessions for: {adapter.labels[adapter.name]}...")
-    
-#     chats = adapter.get_chats()
-    
-#     if not chats:
-#         print("No sessions found.")
-#         return
-
-#     print(f"Found {len(chats)} sessions.")
-    
-#     for chat in sorted(chats, key=lambda x: x.last_updated_at or 0, reverse=True):
-#         print(f"\n[{chat.source}] {chat.name or 'Unnamed Session'}")
-#         print(f"  ID: {chat.composer_id}")
-#         print(f"  Messages: {chat.bubble_count}")
-        
-#         messages = adapter.get_messages(chat)
-#         for msg in messages:
-#             prefix = f"  [{msg.role.upper()}]"
-#             content_preview = (msg.content[:70] + '...') if len(msg.content) > 70 else msg.content
-#             print(f"{prefix} {content_preview}")
-#             if msg.tool_calls:
-#                 print(f"    Tools: {', '.join([tc['name'] for tc in msg.tool_calls])}")
-        
 def compute_stats(messages: List[Message], chat: Chat, start_index: int = 0) -> Dict[str, Any]:
     stats = {
         "total_messages": 0,
@@ -65,13 +32,8 @@ def compute_stats(messages: List[Message], chat: Chat, start_index: int = 0) -> 
     last_index = 0
     last_id = None
     
-    # We always iterate through ALL messages to maintain sequential context if needed, 
-    # but we only AGGREGATE from start_index.
     for i, msg in enumerate(messages):
         if i < start_index:
-            # Still track last_id if it's a user message before start_index? 
-            # The prompt says "calculate analytics starting from the new_id".
-            # So stats should only include stuff from new_id onwards.
             if msg.role == 'user' and msg.id:
                 last_id = msg.id
             continue
@@ -138,13 +100,12 @@ def compute_stats(messages: List[Message], chat: Chat, start_index: int = 0) -> 
         "last_id": last_id
     }
 
-def process_incremental_analytics(folder_id: str, new_id: str) -> Optional[Dict[str, Any]]:
-    from .adapters.codemate import CODEMATE_TASKS_DIR, CodeMateAdapter
+def process_incremental_analytics(folder_id: str, new_id: str, adapter: CodeMateAdapter) -> Optional[Dict[str, Any]]:
     headers = {"x-session": "db584093-d905-49ef-9448-c8c02b521d15"}
 
-    task_dir = os.path.join(CODEMATE_TASKS_DIR, folder_id)
+    task_dir = os.path.join(adapter._tasks_dir, folder_id)
     if not os.path.isdir(task_dir):
-        print(f"Folder {folder_id} not found in {CODEMATE_TASKS_DIR}")
+        print(f"Folder {folder_id} not found in {adapter._tasks_dir}")
         return None
 
     analytics_path = os.path.join(task_dir, 'analytics.json')
@@ -163,9 +124,6 @@ def process_incremental_analytics(folder_id: str, new_id: str) -> Optional[Dict[
                 last_id_tracked = data.get('last_id')
         except: pass
 
-    adapter = CodeMateAdapter()
-    # We need a chat object for the adapter logic
-    # We can use get_chats and find it, or mock it. Mocking is faster if we have IDs.
     chats = adapter.get_chats()
     chat = next((c for c in chats if c.composer_id == folder_id), None)
     if not chat:
@@ -174,27 +132,19 @@ def process_incremental_analytics(folder_id: str, new_id: str) -> Optional[Dict[
     messages = adapter.get_messages(chat)
     found_idx = -1
 
-    # 1. Search from last_index + 1 to end
     for i in range(last_index_tracked + 1, len(messages)):
         msg = messages[i]
         if msg.role == 'user' and msg.id == new_id:
             found_idx = i
             break
     
-    # 2. Search backwards from last_id (tracked)
     if found_idx == -1 and last_id_tracked:
-        # User said "search backwards from the last_id". 
-        # I'll interpret this as finding the last_id first, then searching backwards? 
-        # Actually, "search backwards from the last_id" might mean scanning history backwards.
-        # Let's try searching backwards from the end if not found in the forward scan.
         for i in range(len(messages) - 1, -1, -1):
             msg = messages[i]
             if msg.role == 'user' and msg.id == new_id:
                 found_idx = i
                 break
 
-    # 3. Search entire file (already covered by bit #2 if we search till 0)
-    # But just to be explicit as per instructions:
     if found_idx == -1:
         for i, msg in enumerate(messages):
             if msg.role == 'user' and msg.id == new_id:
@@ -210,7 +160,6 @@ def process_incremental_analytics(folder_id: str, new_id: str) -> Optional[Dict[
     
     print(f"[Incremental] Found {len(result['messages'])} messages to process starting from index {found_idx}")
 
-    # Save update to analytics.json
     analytics_data = {
         "last_index": result['last_index'],
         "last_id": result['last_id']
@@ -234,13 +183,11 @@ def process_incremental_analytics(folder_id: str, new_id: str) -> Optional[Dict[
         try:
             import requests
             api_url = "http://localhost:8000/api/incremental-analytics"
-            print(f"json payload is {json.dumps(payload, indent=4)}")
             response = requests.post(api_url, json=payload, headers=headers, timeout=15)
             response.raise_for_status()
         except Exception as e:
             print(f"[Incremental] Network error during background POST: {e}")
 
-    import threading
     print(f"[Incremental] Spawning background thread for cloud sync...")
     thread = threading.Thread(target=send_task, daemon=True)
     thread.start()
@@ -250,56 +197,50 @@ def process_incremental_analytics(folder_id: str, new_id: str) -> Optional[Dict[
 def main():
     print("--- Agentlytics Python Collector ---")
     
-    adapter = CodeMateAdapter()
+    adapters = [vs_code_cora, jet_brains_cora]
     headers = {"x-session": "db584093-d905-49ef-9448-c8c02b521d15"}
     analytics = AnalyticsClient(headers=headers)
     
-    print(f"Scanning sessions for: {adapter.labels[adapter.name]}...")
+    all_chats = []
     
-    chats = adapter.get_chats()
-    
-    if not chats:
-        print("No sessions found.")
-        return
-
-    print(f"Found {len(chats)} sessions.")
-    
-    for chat in sorted(chats, key=lambda x: x.last_updated_at or 0, reverse=True):
-        print(f"\n[{chat.source}] {chat.name or 'Unnamed Session'}")
-        print(f"  ID: {chat.composer_id}")
-        print(f"  Messages: {chat.bubble_count}")
+    for adapter in adapters:
+        print(f"\nScanning sessions for: {adapter.labels[adapter.name]}...")
+        print(f"Tasks directory: {adapter._tasks_dir}")
         
-        messages = adapter.get_messages(chat)
-        for msg in messages:
-            prefix = f"  [{msg.role.upper()}]"
-            content_preview = (msg.content[:70] + '...') if len(msg.content) > 70 else msg.content
-            print(f"{prefix} {content_preview}")
-            if msg.tool_calls:
-                print(f"    Tools: {', '.join([tc['name'] for tc in msg.tool_calls])}")
-        
-        result = compute_stats(messages, chat)
-        
-        analytics.track({
-            "chat": result['chat'],
-            "stats": result['stats'],
-            "messages": result['messages'],
-            "tool_calls": result['tool_calls']
-        })
+        chats = adapter.get_chats()
+        if not chats:
+            print(f"No sessions found for {adapter.name}.")
+            continue
 
-        # Save analytics.json if task dir is available
-        if chat._task_dir and os.path.exists(chat._task_dir):
-            analytics_path = os.path.join(chat._task_dir, 'analytics.json')
-            try:
-                with open(analytics_path, 'w', encoding='utf-8') as f:
-                    json.dump({
-                        "last_index": result['last_index'],
-                        "last_id": result['last_id']
-                    }, f, indent=4)
-                print(f"  Saved analytics to: {analytics_path}")
-            except Exception as e:
-                print(f"  Error saving analytics: {e}")
+        print(f"Found {len(chats)} sessions.")
+        all_chats.extend(chats)
+        
+        for chat in sorted(chats, key=lambda x: x.last_updated_at or 0, reverse=True):
+            print(f"  [{chat.source}] {chat.name or 'Unnamed Session'}")
+            print(f"    ID: {chat.composer_id}")
+            
+            messages = adapter.get_messages(chat)
+            result = compute_stats(messages, chat)
+            
+            analytics.track({
+                "chat": result['chat'],
+                "stats": result['stats'],
+                "messages": result['messages'],
+                "tool_calls": result['tool_calls']
+            })
 
-    print("\nProcessing complete. Flushing analytics background thread...")
+            if chat._task_dir and os.path.exists(chat._task_dir):
+                analytics_path = os.path.join(chat._task_dir, 'analytics.json')
+                try:
+                    with open(analytics_path, 'w', encoding='utf-8') as f:
+                        json.dump({
+                            "last_index": result['last_index'],
+                            "last_id": result['last_id']
+                        }, f, indent=4)
+                except Exception: pass
+
+    print(f"\nProcessing complete across {len(adapters)} adapters.")
+    print("Flushing analytics background thread...")
     analytics.shutdown()
     print("Done.")
 

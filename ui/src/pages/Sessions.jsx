@@ -98,7 +98,7 @@ Tooltip.positioners.belowCursor = function(elements, eventPosition) {
   return { x: eventPosition.x, y: eventPosition.y + 20 }
 }
 
-export default function Sessions({ overview }) {
+export default function Sessions({ overview, selectedEditor: globalEditor }) {
   const { dark } = useTheme()
   const txtDim = dark ? '#555' : '#999'
   const legendColor = dark ? '#777' : '#555'
@@ -108,7 +108,15 @@ export default function Sessions({ overview }) {
   const [search, setSearch] = useState('')
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [editor, setEditor] = useState(searchParams.get('editor') || '')
+  const [editor, setEditor] = useState(searchParams.get('editor') || (globalEditor && globalEditor !== 'all' ? globalEditor : ''))
+
+  useEffect(() => {
+    if (globalEditor && globalEditor !== 'all') {
+      setEditor(globalEditor)
+    } else if (!searchParams.get('editor')) {
+      setEditor('')
+    }
+  }, [globalEditor, searchParams])
   const [loading, setLoading] = useState(true)
   const [groupByProject, setGroupByProject] = useState(false)
   const [collapsedProjects, setCollapsedProjects] = useState(new Set())

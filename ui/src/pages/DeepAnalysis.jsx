@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import { Loader2, X, Zap, MessageSquare, Wrench, Cpu, TrendingUp } from 'lucide-react'
@@ -188,7 +188,7 @@ function ProportionBar({ segments, height = 6 }) {
   )
 }
 
-export default function DeepAnalysis({ overview }) {
+export default function DeepAnalysis({ overview, selectedEditor }) {
   const [editor, setEditor] = useState('')
   const [folder, setFolder] = useState('')
   const [dateRange, setDateRange] = useState(null)
@@ -203,9 +203,38 @@ export default function DeepAnalysis({ overview }) {
   const legendColor = dark ? '#9ca3af' : '#555'
 
   const editors = overview?.editors || []
-  const projects = overview?.topProjects || []
+  console.log("Editors:", editors)
 
-  async function analyze() {
+  const projects = useMemo(() => {
+    console.log("Overview:", overview)
+
+    const raw = overview?.topProjects || []
+    console.log("Raw Projects:", raw)
+
+    const active = editor || selectedEditor
+    console.log("Editor:", editor)
+    console.log("Selected Editor:", selectedEditor)
+    console.log("Active Editor Used:", active)
+
+    if (!active || active === 'all') {
+      console.log("Returning all projects")
+      return raw
+    }
+
+    const filtered = raw.filter(p => {
+      console.log("Checking project:", p)
+      console.log("Project editors:", p.editors)
+      console.log("Does project include active editor?", p.editors?.[active])
+
+      return p.editors && p.editors[active]
+    })
+
+    console.log("Filtered Projects:", filtered)
+
+    return filtered
+  }, [overview, editor, selectedEditor])
+
+  const analyze = useCallback(async () => {
     setLoading(true)
     const dateParams = dateRangeToApiParams(dateRange)
     const [result] = await Promise.all([
@@ -213,12 +242,30 @@ export default function DeepAnalysis({ overview }) {
     ])
     setData(result)
     setLoading(false)
-  }
+  }, [editor, folder, dateRange])
 
-  useEffect(() => { analyze() }, [editor, folder, dateRange])
+  useEffect(() => {
+    if (selectedEditor && selectedEditor !== 'all') {
+      setEditor(selectedEditor)
+    } else {
+      setEditor('')
+    }
+  }, [selectedEditor])
 
-  const tools = data?.topTools?.slice(0, 15) || []
-  const models = data?.topModels?.slice(0, 10) || []
+  useEffect(() => {
+    if (folder && projects.length > 0 && !projects.find(p => p.fullPath === folder)) {
+      setFolder('')
+    }
+  }, [projects, folder])
+
+  useEffect(() => {
+    let active = true
+    if (active) analyze()
+    return () => { active = false }
+  }, [analyze])
+
+  const tools = useMemo(() => data?.topTools?.slice(0, 15) || [], [data])
+  const models = useMemo(() => data?.topModels?.slice(0, 10) || [], [data])
 
   // Computed insights
   const insights = useMemo(() => {
