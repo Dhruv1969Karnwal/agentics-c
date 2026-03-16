@@ -60,7 +60,13 @@ def main():
         msg_list = []
         tc_list = []
 
+        last_index = 0
+        last_id = None
         for i, msg in enumerate(messages):
+            last_index = i
+            if msg.role == 'user' and msg.id:
+                last_id = msg.id
+
             if msg.role == 'user':
                 stats['user_messages'] += 1
                 stats['total_user_chars'] += len(msg.content)
@@ -115,6 +121,20 @@ def main():
             "messages": msg_list,
             "tool_calls": tc_list
         })
+
+        # Save analytics.json if task dir is available
+        if chat._task_dir and os.path.exists(chat._task_dir):
+            analytics_data = {
+                "last_index": last_index,
+                "last_id": last_id
+            }
+            analytics_path = os.path.join(chat._task_dir, 'analytics.json')
+            try:
+                with open(analytics_path, 'w', encoding='utf-8') as f:
+                    json.dump(analytics_data, f, indent=4)
+                print(f"  Saved analytics to: {analytics_path}")
+            except Exception as e:
+                print(f"  Error saving analytics: {e}")
 
     print("\nProcessing complete. Flushing analytics background thread...")
     analytics.shutdown()

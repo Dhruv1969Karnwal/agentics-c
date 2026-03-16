@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any
 class Message:
     role: str  # 'user' | 'assistant' | 'system' | 'tool'
     content: str
+    id: Optional[str] = None
     model: Optional[str] = None
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None

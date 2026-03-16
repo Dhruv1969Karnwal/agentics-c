@@ -117,9 +117,11 @@ class CodeMateAdapter(BaseAdapter):
             else:
                 turn_tokens = round(char_count / CHARS_PER_TOKEN)
 
+            message_id = msg.get('id')
             message_obj = Message(
                 role=role,
                 content=text_content,
+                id=message_id,
                 model=msg.get('model', 'code-complete')
             )
 
