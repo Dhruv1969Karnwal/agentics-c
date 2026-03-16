@@ -591,6 +591,127 @@ def get_tool_calls(
         "chatId": tc.chat_id
     } for tc, chat_name in rows]
 
+class IncrementalRequest(BaseModel):
+    chat: Dict[str, Any]
+    stats: Dict[str, Any]
+    messages: List[Dict[str, Any]]
+    tool_calls: List[Dict[str, Any]]
+
+@app.post("/api/incremental-analytics")
+def incremental_analytics(data: IncrementalRequest, db: Session = Depends(get_db), email: str = Depends(get_user_email)):
+    # 1. Insert/Update Chat
+    
+    c = data.chat
+    chat_obj = Chat(
+        id=c['id'],
+        source=c['source'],
+        name=c.get('name'),
+        mode=c.get('mode'),
+        folder=c.get('folder'),
+        created_at=c.get('created_at'),
+        last_updated_at=c.get('last_updated_at'),
+        encrypted=c.get('encrypted', 0),
+        bubble_count=c.get('bubble_count', 0),
+        user_email=email,
+        _meta=json.dumps(c.get('_meta', {})) if isinstance(c.get('_meta'), dict) else c.get('_meta')
+    )
+    db.merge(chat_obj)
+    
+    # 2. Insert/Update Stats (Additive for numeric fields)
+    s = data.stats
+    stats_obj = db.query(ChatStats).filter(ChatStats.chat_id == c['id']).first()
+    
+    if not stats_obj:
+        stats_obj = ChatStats(
+            chat_id=c['id'],
+            total_messages=s.get('total_messages', 0),
+            user_messages=s.get('user_messages', 0),
+            assistant_messages=s.get('assistant_messages', 0),
+            tool_messages=s.get('tool_messages', 0),
+            system_messages=s.get('system_messages', 0),
+            tool_calls=json.dumps(s.get('tool_calls', [])),
+            models=json.dumps(s.get('models', [])),
+            total_user_chars=s.get('total_user_chars', 0),
+            total_assistant_chars=s.get('total_assistant_chars', 0),
+            total_input_tokens=s.get('total_input_tokens', 0),
+            total_output_tokens=s.get('total_output_tokens', 0),
+            total_cache_read=s.get('total_cache_read', 0),
+            total_cache_write=s.get('total_cache_write', 0),
+            user_email=email,
+            analyzed_at=s.get('analyzed_at')
+        )
+        db.add(stats_obj)
+    else:
+        # Add new stats to existing ones
+        stats_obj.total_messages += s.get('total_messages', 0)
+        stats_obj.user_messages += s.get('user_messages', 0)
+        stats_obj.assistant_messages += s.get('assistant_messages', 0)
+        stats_obj.tool_messages += s.get('tool_messages', 0)
+        stats_obj.system_messages += s.get('system_messages', 0)
+        stats_obj.total_user_chars += s.get('total_user_chars', 0)
+        stats_obj.total_assistant_chars += s.get('total_assistant_chars', 0)
+        stats_obj.total_input_tokens += s.get('total_input_tokens', 0)
+        stats_obj.total_output_tokens += s.get('total_output_tokens', 0)
+        stats_obj.total_cache_read += s.get('total_cache_read', 0)
+        stats_obj.total_cache_write += s.get('total_cache_write', 0)
+        stats_obj.analyzed_at = s.get('analyzed_at')
+        
+        # Merge Tool Calls (unique list)
+        try:
+            old_tools = json.loads(stats_obj.tool_calls)
+            new_tools = s.get('tool_calls', [])
+            stats_obj.tool_calls = json.dumps(list(set(old_tools + new_tools)))
+        except: pass
+
+        # Merge Models (unique list)
+        try:
+            old_models = json.loads(stats_obj.models)
+            new_models = s.get('models', [])
+            stats_obj.models = json.dumps(list(set(old_models + new_models)))
+        except: pass
+
+    # 3. Append Messages (Check for duplicates by seq)
+    for i, m in enumerate(data.messages):
+        seq = m.get('seq', i)
+        # Check if message already exists
+        exists = db.query(Message).filter(Message.chat_id == c['id'], Message.seq == seq).first()
+        if not exists:
+            msg_obj = Message(
+                chat_id=c['id'],
+                seq=seq,
+                role=m['role'],
+                content=m['content'],
+                model=m.get('model'),
+                input_tokens=m.get('input_tokens'),
+                output_tokens=m.get('output_tokens'),
+                user_email=email
+            )
+            db.add(msg_obj)
+
+    # 4. Append Tool Calls
+    for tc in data.tool_calls:
+        # Check for exact duplicate tool call (heuristic: name + args + timestamp)
+        tc_exists = db.query(ToolCall).filter(
+            ToolCall.chat_id == c['id'],
+            ToolCall.tool_name == tc['tool_name'],
+            ToolCall.timestamp == tc.get('timestamp')
+        ).first()
+        
+        if not tc_exists:
+            tc_obj = ToolCall(
+                chat_id=c['id'],
+                tool_name=tc['tool_name'],
+                args_json=json.dumps(tc.get('args', {})),
+                source=tc.get('source'),
+                folder=tc.get('folder'),
+                user_email=email,
+                timestamp=tc.get('timestamp')
+            )
+            db.add(tc_obj)
+
+    db.commit()
+    return {"status": "success", "chat_id": c['id'], "user": email}
+
 class AnalyticsRecord(BaseModel):
     chat: Dict[str, Any]
     stats: Dict[str, Any]
@@ -602,6 +723,7 @@ class AnalyticsBatch(BaseModel):
 
 @app.post("/ingest/batch")
 def ingest_batch(batch: AnalyticsBatch, db: Session = Depends(get_db), email: str = Depends(get_user_email)):
+    print(f"--- Received batch of {len(batch.records)} records for user {email} ---")
     for entry in batch.records:
         # 1. Insert/Update Chat
         c = entry.chat

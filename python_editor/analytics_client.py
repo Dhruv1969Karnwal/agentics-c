@@ -44,6 +44,7 @@ class AnalyticsClient:
             self._send_batch(batch)
 
     def _send_batch(self, batch: List[Dict[str, Any]]):
+        print(f"  [Analytics] Attempting to send batch of {len(batch)} records to {self.url}...")
         try:
             response = requests.post(
                 self.url, 
@@ -51,6 +52,7 @@ class AnalyticsClient:
                 headers=self.headers,
                 timeout=10
             )
+            print(f"  [Analytics] Sent batch. Status Code: {response.status_code}")
             if response.status_code != 200:
                 print(f"  [Analytics] Failed to send batch: {response.text}")
         except Exception as e:
