@@ -27,6 +27,7 @@ class AnalyticsClient:
         while not self.stop_event.is_set() or not self.queue.empty():
             try:
                 # Wait for an item with a timeout to allow periodic flushing
+                # If we're stopping, we should still process everything in the queue
                 item = self.queue.get(timeout=1.0)
                 batch.append(item)
                 self.queue.task_done()
@@ -50,7 +51,7 @@ class AnalyticsClient:
                 self.url, 
                 json={"records": batch},
                 headers=self.headers,
-                timeout=10
+                timeout=15  # Increased timeout for batches
             )
             print(f"  [Analytics] Sent batch. Status Code: {response.status_code}")
             if response.status_code != 200:
@@ -60,6 +61,9 @@ class AnalyticsClient:
 
     def shutdown(self):
         """Signal the worker to finish and stop."""
+        print("  [Analytics] Shutting down client and flushing remaining records...")
         self.stop_event.set()
         if self.worker_thread.is_alive():
-            self.worker_thread.join(timeout=5)
+            # Wait longer for the worker to finish processing the queue
+            self.worker_thread.join(timeout=15)
+        print("  [Analytics] Shutdown complete.")
