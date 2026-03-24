@@ -35,18 +35,18 @@ function NavDropdown({ icon: Icon, label, items }) {
   return (
     <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
       <button
-        className={`flex items-center gap-1.5 px-2.5 py-1 text-[12px] rounded transition ${
-          isActive ? 'bg-[var(--c-card)] text-[var(--c-white)]' : 'text-[var(--c-text2)] hover:text-[var(--c-white)]'
+        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition ${
+          isActive ? 'bg-[var(--color-accent-subtle)] text-[var(--color-accent-light)]' : 'text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-3)]'
         }`}
       >
-        <Icon size={12} />
+        <Icon size={14} />
         {label}
-        <ChevronDown size={10} style={{ opacity: 0.5 }} />
+        <ChevronDown size={12} style={{ opacity: 0.6 }} />
       </button>
       {open && (
         <div
-          className="absolute top-full left-0 py-1 rounded shadow-lg min-w-[160px] z-[100]"
-          style={{ background: 'var(--c-bg)', border: '1px solid var(--c-border)' }}
+          className="absolute top-full left-0 mt-1 py-2 rounded-xl shadow-lg min-w-[180px] z-[100] overflow-hidden"
+          style={{ background: 'var(--color-bg-2)', border: '1px solid var(--color-border)' }}
         >
           {items.map(({ to, icon: SubIcon, label: subLabel }) => (
             <NavLink
@@ -54,12 +54,12 @@ function NavDropdown({ icon: Icon, label, items }) {
               to={to}
               onClick={() => setOpen(false)}
               className={({ isActive: a }) =>
-                `flex items-center gap-2 px-3 py-1.5 text-[12px] transition ${
-                  a ? 'bg-[var(--c-bg3)] text-[var(--c-white)]' : 'text-[var(--c-text2)] hover:text-[var(--c-white)] hover:bg-[var(--c-bg3)]'
+                `flex items-center gap-3 px-4 py-2.5 text-sm transition ${
+                  a ? 'bg-[var(--color-accent-subtle)] text-[var(--color-accent-light)]' : 'text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-3)]'
                 }`
               }
             >
-              <SubIcon size={12} />
+              <SubIcon size={14} />
               {subLabel}
             </NavLink>
           ))}
@@ -143,84 +143,87 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b px-4 py-1.5 flex items-center gap-3 sticky top-0 z-50 backdrop-blur-xl" style={{ borderColor: 'var(--c-border)', background: 'var(--c-header)' }}>
-        <span className="flex items-center gap-2 text-xs font-bold tracking-tight" style={{ color: 'var(--c-white)' }}>
-          <img src="/assets/codemateLogo.svg" alt="CodeMate AI" className="h-9.5 w-auto" />
-          {isRelay && <span className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>relay</span>}
-        </span>
-        <nav className="flex gap-0.5 ml-2">
-          {nav.map((item) => item.children ? (
-            <NavDropdown key={item.label} icon={item.icon} label={item.label} items={item.children} />
-          ) : (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-1.5 px-2.5 py-1 text-[12px] rounded transition ${
-                  isActive ? 'bg-[var(--c-card)] text-[var(--c-white)]' : 'text-[var(--c-text2)] hover:text-[var(--c-white)]'
-                }`
-              }
-            >
-              <item.icon size={12} />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="ml-auto flex items-center gap-3">
-          {!isRelay && (
-            <>
-            <div className="relative flex items-center hidden">
-              <select
-                value={selectedEditor}
-                onChange={(e) => setSelectedEditor(e.target.value)}
-                className="appearance-none bg-[var(--c-bg3)] text-[var(--c-text)] text-[11px] px-2 py-1 pr-6 rounded border border-[var(--c-border)] focus:outline-none cursor-pointer hover:bg-[var(--c-card)] transition"
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b sticky top-0 z-50 backdrop-blur-xl" style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-2)' }}>
+        <div className="flex items-center gap-6 px-6 py-4">
+          <span className="flex items-center gap-3 text-base font-bold tracking-tight" style={{ color: 'var(--color-text)' }}>
+            <img src="/assets/codemateLogo.svg" alt="CodeMate AI" className="h-10 w-auto" />
+            {isRelay && <span className="text-xs font-medium px-2 py-1 rounded-md" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent-light)' }}>RELAY</span>}
+          </span>
+          <nav className="flex items-center gap-2">
+            {nav.map((item) => item.children ? (
+              <NavDropdown key={item.label} icon={item.icon} label={item.label} items={item.children} />
+            ) : (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition ${
+                    isActive ? 'bg-[var(--color-accent-subtle)] text-[var(--color-accent-light)]' : 'text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-3)]'
+                  }`
+                }
               >
-                {editorOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <ChevronDown size={10} className="absolute right-2 pointer-events-none text-[var(--c-text3)]" />
-            </div>
-            <span className="text-[11px]" style={{ color: 'var(--c-text2)' }}>
-              {overview ? `${overview.totalChats} sessions` : '...'}
-            </span>
-            </>
-          )}
+                <item.icon size={16} />
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="ml-auto flex items-center gap-4">
+            {!isRelay && (
+              <>
+                <div className="relative flex items-center hidden">
+                  <select
+                    value={selectedEditor}
+                    onChange={(e) => setSelectedEditor(e.target.value)}
+                    className="appearance-none input w-48 cursor-pointer"
+                    style={{ paddingRight: '2.5rem' }}
+                  >
+                    {editorOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-3 pointer-events-none text-[var(--color-text-4)]" />
+                </div>
+                <span className="text-sm font-mono" style={{ color: 'var(--color-text-2)' }}>
+                  {overview ? `${overview.totalChats} sessions` : '...'}
+                </span>
+              </>
+            )}
 
-          {isRelay && (
-            <button
-              onClick={() => { setMcpOpen(true); setMcpCopied(false) }}
-              className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] transition hover:bg-[var(--c-card)]"
-              style={{ color: '#818cf8', border: '1px solid var(--c-border)' }}
-              title="MCP Connection"
+            {isRelay && (
+              <button
+                onClick={() => { setMcpOpen(true); setMcpCopied(false) }}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium transition hover:bg-[var(--color-bg-3)] rounded-lg"
+                style={{ color: 'var(--color-accent-light)', border: '1px solid var(--color-border)' }}
+                title="MCP Connection"
+              >
+                <Plug size={14} />
+                Connect
+              </button>
+            )}
+            <NavLink
+              to="/settings"
+              className="p-2 rounded-lg transition hover:bg-[var(--color-bg-3)]"
+              style={({ isActive }) => ({ color: isActive ? 'var(--color-accent)' : 'var(--color-text-2)' })}
+              title="Settings"
             >
-              <Plug size={10} />
-              Connect
+              <SettingsIcon size={18} />
+            </NavLink>
+            <button
+              onClick={toggle}
+              className="p-2 rounded-lg transition hover:bg-[var(--color-bg-3)]"
+              style={{ color: 'var(--color-text-2)' }}
+              title={dark ? 'Light mode' : 'Dark mode'}
+            >
+              {dark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-          )}
-          <NavLink
-            to="/settings"
-            className="p-1 rounded transition hover:bg-[var(--c-card)] hidden"
-            style={({ isActive }) => ({ color: isActive ? '#6366f1' : 'var(--c-text2)' })}
-            title="Settings"
-          >
-            <SettingsIcon size={13} />
-          </NavLink>
-          <button
-            onClick={toggle}
-            className="p-1 rounded transition hover:bg-[var(--c-card)]"
-            style={{ color: 'var(--c-text2)' }}
-            title={dark ? 'Light mode' : 'Dark mode'}
-          >
-            {dark ? <Sun size={13} /> : <Moon size={13} />}
-          </button>
+          </div>
         </div>
       </header>
 
 
-      <main className={isRelay ? 'px-0' : 'p-4 max-w-[1400px] mx-auto'}>
+      <main className="flex-1">
         {mode === null ? (
           <AnimatedLoader label="Loading..." />
         ) : isRelay ? (
@@ -230,72 +233,76 @@ export default function App() {
             <Route path="/relay/user/:username" element={<RelayUserDetail />} />
           </Routes>
         ) : (
-          <Routes>
-            <Route path="/" element={<Dashboard overview={overview} selectedEditor={selectedEditor} />} />
-            <Route path="/projects" element={<Projects overview={overview} selectedEditor={selectedEditor} setSelectedEditor={setSelectedEditor} />} />
-            <Route path="/projects/detail" element={<ProjectDetail selectedEditor={selectedEditor} />} />
-            <Route path="/sessions" element={<Sessions overview={overview} selectedEditor={selectedEditor} />} />
-            {/* ChatDetail is now a sidebar in Sessions */}
-            <Route path="/analysis" element={<DeepAnalysis overview={overview} selectedEditor={selectedEditor} />} />
-            <Route path="/compare" element={<Compare overview={overview} selectedEditor={selectedEditor} />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
+          <div className="max-w-[1600px] mx-auto px-6 py-8">
+            <Routes>
+              <Route path="/" element={<Dashboard overview={overview} selectedEditor={selectedEditor} />} />
+              <Route path="/projects" element={<Projects overview={overview} selectedEditor={selectedEditor} setSelectedEditor={setSelectedEditor} />} />
+              <Route path="/projects/detail" element={<ProjectDetail selectedEditor={selectedEditor} />} />
+              <Route path="/sessions" element={<Sessions overview={overview} selectedEditor={selectedEditor} />} />
+              {/* ChatDetail is now a sidebar in Sessions */}
+              <Route path="/analysis" element={<DeepAnalysis overview={overview} selectedEditor={selectedEditor} />} />
+              <Route path="/compare" element={<Compare overview={overview} selectedEditor={selectedEditor} />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </div>
         )}
       </main>
 
-      <footer className="border-t mt-12 px-6 py-12" style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}>
-        <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-[12px]">
-          {/* Logo & Info */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <img src="/assets/codemateLogo.svg" alt="CodeMate AI" className="h-9.5 w-auto" />
+      <footer className="border-t mt-16" style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-2)' }}>
+        <div className="max-w-[1600px] mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-sm">
+            {/* Logo & Info */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <img src="/assets/codemateLogo.svg" alt="CodeMate AI" className="h-10 w-auto" />
+              </div>
+              <p style={{ color: 'var(--color-text-2)', lineHeight: '1.7' }} className="max-w-[300px]">
+                CodeMate AI, your smart coding partner. Review, debug, and complete code faster with AI-powered assistance.
+              </p>
+              <div className="flex items-center gap-5">
+                <a href="https://x.com/codemateai" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-70" style={{ color: 'var(--color-text-3)' }}>
+                  <img src="https://img.icons8.com/ios-filled/24/ffffff/twitterx--v2.png" alt="X" className="w-5 h-5" />
+                </a>
+                <a href="https://www.linkedin.com/company/codemateai/" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-70" style={{ color: 'var(--color-text-3)' }}>
+                  <img src="https://img.icons8.com/ios-filled/24/ffffff/linkedin.png" alt="LinkedIn" className="w-5 h-5" />
+                </a>
+                <a href="https://www.instagram.com/codemateai" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-70" style={{ color: 'var(--color-text-3)' }}>
+                  <img src="https://img.icons8.com/ios-filled/24/ffffff/instagram-new.png" alt="Instagram" className="w-5 h-5" />
+                </a>
+                <a href="https://www.youtube.com/@codemateai" target="_blank" rel="noopener noreferrer" className="transition hover:opacity-70" style={{ color: 'var(--color-text-3)' }}>
+                  <img src="https://img.icons8.com/ios-filled/24/ffffff/youtube-play.png" alt="YouTube" className="w-5 h-5" />
+                </a>
+              </div>
             </div>
-            <p style={{ color: 'var(--c-text2)', lineHeight: '1.6' }} className="max-w-[280px]">
-              CodeMate AI, your smart coding partner. Review, debug, and complete code faster with AI-powered assistance.
-            </p>
-            <div className="flex items-center gap-4">
-              <a href="https://x.com/codemateai" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition">
-                <img src="https://img.icons8.com/ios-filled/24/ffffff/twitterx--v2.png" alt="X" className="w-5 h-5" />
-              </a>
-              <a href="https://www.linkedin.com/company/codemateai/" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition">
-                <img src="https://img.icons8.com/ios-filled/24/ffffff/linkedin.png" alt="LinkedIn" className="w-5 h-5" />
-              </a>
-              <a href="https://www.instagram.com/codemateai" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition">
-                <img src="https://img.icons8.com/ios-filled/24/ffffff/instagram-new.png" alt="Instagram" className="w-5 h-5" />
-              </a>
-              <a href="https://www.youtube.com/@codemateai" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition">
-                <img src="https://img.icons8.com/ios-filled/24/ffffff/youtube-play.png" alt="YouTube" className="w-5 h-5" />
-              </a>
+
+            {/* Community */}
+            <div className="space-y-4">
+              <h4 className="font-semibold uppercase tracking-wider text-sm" style={{ color: 'var(--color-text)' }}>Community</h4>
+              <ul className="space-y-3" style={{ color: 'var(--color-text-3)' }}>
+                <li><a href="https://www.instagram.com/codemateai" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-text)]">Instagram</a></li>
+                <li><a href="https://www.linkedin.com/company/codemateai/" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-text)]">LinkedIn</a></li>
+                <li><a href="https://x.com/codemateai" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-text)]">Twitter</a></li>
+                <li><a href="https://www.youtube.com/@codemateai" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-text)]">YouTube</a></li>
+              </ul>
             </div>
-          </div>
 
-          {/* Community */}
-          <div className="space-y-4">
-            <h4 className="font-bold uppercase tracking-wider" style={{ color: 'var(--c-white)' }}>Community</h4>
-            <ul className="space-y-2.5" style={{ color: 'var(--c-text3)' }}>
-              <li><a href="https://www.instagram.com/codemateai" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Instagram</a></li>
-              <li><a href="https://www.linkedin.com/company/codemateai/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">LinkedIn</a></li>
-              <li><a href="https://x.com/codemateai" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Twitter</a></li>
-              <li><a href="https://www.youtube.com/@codemateai" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">YouTube</a></li>
-            </ul>
-          </div>
+            {/* Others */}
+            <div className="space-y-4">
+              <h4 className="font-semibold uppercase tracking-wider text-sm" style={{ color: 'var(--color-text)' }}>Others</h4>
+              <ul className="space-y-3" style={{ color: 'var(--color-text-3)' }}>
+                <li><a href="https://huggingface.co/codemateai/CodeMate-v0.1" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-text)]">Hugging Face</a></li>
+                <li><a href="https://docs.codemate.ai/policies/refund-policy" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-text)]">Refund Policy</a></li>
+              </ul>
+            </div>
 
-          {/* Others */}
-          <div className="space-y-4">
-            <h4 className="font-bold uppercase tracking-wider" style={{ color: 'var(--c-white)' }}>Others</h4>
-            <ul className="space-y-2.5" style={{ color: 'var(--c-text3)' }}>
-              <li><a href="https://huggingface.co/codemateai/CodeMate-v0.1" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Hugging Face</a></li>
-              <li><a href="https://docs.codemate.ai/policies/refund-policy" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Refund Policy</a></li>
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div className="space-y-4">
-            <h4 className="font-bold uppercase tracking-wider" style={{ color: 'var(--c-white)' }}>Legal</h4>
-            <ul className="space-y-2.5" style={{ color: 'var(--c-text3)' }}>
-              <li><a href="https://docs.codemate.ai/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Privacy Policy</a></li>
-              <li><a href="https://docs.codemate.ai/policies/terms-of-service" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--c-white)] transition">Terms of Service</a></li>
-            </ul>
+            {/* Legal */}
+            <div className="space-y-4">
+              <h4 className="font-semibold uppercase tracking-wider text-sm" style={{ color: 'var(--color-text)' }}>Legal</h4>
+              <ul className="space-y-3" style={{ color: 'var(--color-text-3)' }}>
+                <li><a href="https://docs.codemate.ai/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-text)]">Privacy Policy</a></li>
+                <li><a href="https://docs.codemate.ai/policies/terms-of-service" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-text)]">Terms of Service</a></li>
+              </ul>
+            </div>
           </div>
         </div>
       </footer>
@@ -303,46 +310,67 @@ export default function App() {
       {/* MCP Config Modal */}
       {mcpOpen && (
         <>
-          <div className="fixed inset-0 z-[60]" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setMcpOpen(false)} />
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setMcpOpen(false)} />
           <div
-            className="fixed z-[70] w-[440px] max-w-[90vw] p-5 rounded shadow-2xl"
-            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--c-bg)', border: '1px solid var(--c-border)' }}
+            className="fixed z-[70] w-full max-w-lg p-6 rounded-2xl shadow-2xl"
+            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--color-bg-2)', border: '1px solid var(--color-border)' }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-[13px] font-bold" style={{ color: 'var(--c-white)' }}>
-                <Plug size={13} className="inline mr-1.5" style={{ color: '#818cf8' }} />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3 text-base font-semibold" style={{ color: 'var(--color-text)' }}>
+                <div className="w-10 h-10 flex items-center justify-center rounded-lg" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent-light)' }}>
+                  <Plug size={18} />
+                </div>
                 Connection Config
               </div>
-              <button onClick={() => setMcpOpen(false)} className="text-[18px] leading-none px-1 hover:opacity-70 transition" style={{ color: 'var(--c-text3)' }}>&times;</button>
-            </div>
-
-            <div className="text-[12px] font-medium mb-1.5" style={{ color: 'var(--c-white)' }}>MCP Config</div>
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-[10px]" style={{ color: 'var(--c-text3)' }}>Add to your AI client's MCP settings</div>
-              <button
-                onClick={() => {
-                  const json = JSON.stringify({ "mcpServers": { "agentlytics": { "url": `${window.location.origin}/mcp` } } }, null, 2)
-                  navigator.clipboard.writeText(json)
-                  setMcpCopied(true)
-                  setTimeout(() => setMcpCopied(false), 2000)
-                }}
-                className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] transition hover:bg-[var(--c-bg3)]"
-                style={{ border: '1px solid var(--c-border)', color: mcpCopied ? '#22c55e' : 'var(--c-text2)' }}
-              >
-                {mcpCopied ? <><Check size={9} /> Copied</> : <><Copy size={9} /> Copy</>}
+              <button onClick={() => setMcpOpen(false)} className="p-1 rounded-lg transition hover:bg-[var(--color-bg-3)]" style={{ color: 'var(--color-text-4)' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <pre
-              className="text-[11px] px-3 py-2 overflow-x-auto mb-4"
-              style={{ background: 'var(--c-bg3)', border: '1px solid var(--c-border)', color: 'var(--c-text)', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.6 }}
-            >{`{\n  "mcpServers": {\n    "agentlytics": {\n      "url": "${window.location.origin}/mcp"\n    }\n  }\n}`}</pre>
 
-            <div className="text-[12px] font-medium mb-1.5" style={{ color: 'var(--c-white)' }}>Join Command</div>
-            <div className="text-[10px] mb-1" style={{ color: 'var(--c-text3)' }}>Share with your team to start syncing sessions</div>
-            <pre
-              className="text-[11px] px-3 py-2 overflow-x-auto"
-              style={{ background: 'var(--c-bg3)', border: '1px solid var(--c-border)', color: 'var(--c-text)', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.6 }}
-            >{`cd /path/to/your-project\nRELAY_PASSWORD=${relayPassword || '<pass>'} npx agentlytics --join ${window.location.host}`}</pre>
+            <div className="mb-4">
+              <div className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>MCP Config</div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs" style={{ color: 'var(--color-text-4)' }}>Add to your AI client's MCP settings</div>
+                <button
+                  onClick={() => {
+                    const json = JSON.stringify({ "mcpServers": { "agentlytics": { "url": `${window.location.origin}/mcp` } } }, null, 2)
+                    navigator.clipboard.writeText(json)
+                    setMcpCopied(true)
+                    setTimeout(() => setMcpCopied(false), 2000)
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition rounded-lg"
+                  style={{
+                    background: mcpCopied ? 'rgba(34, 197, 94, 0.1)' : 'var(--color-bg-3)',
+                    color: mcpCopied ? '#22c55e' : 'var(--color-text-2)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  {mcpCopied ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy JSON</>}
+                </button>
+              </div>
+              <pre
+                className="text-xs px-4 py-3 rounded-lg overflow-x-auto"
+                style={{ background: 'var(--color-bg-3)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontFamily: 'var(--font-mono)', lineHeight: 1.7 }}
+              >{`{
+  "mcpServers": {
+    "agentlytics": {
+      "url": "${window.location.origin}/mcp"
+    }
+  }
+}`}</pre>
+            </div>
+
+            <div className="mb-2">
+              <div className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>Join Command</div>
+              <div className="text-xs mb-3" style={{ color: 'var(--color-text-4)' }}>Share with your team to start syncing sessions</div>
+              <pre
+                className="text-xs px-4 py-3 rounded-lg overflow-x-auto"
+                style={{ background: 'var(--color-bg-3)', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontFamily: 'var(--font-mono)', lineHeight: 1.7 }}
+              >{`cd /path/to/your-project
+RELAY_PASSWORD=${relayPassword || '<pass>'} npx agentlytics --join ${window.location.host}`}</pre>
+            </div>
           </div>
         </>
       )}

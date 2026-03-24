@@ -71,7 +71,6 @@ export default function Compare({ overview }) {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const { dark } = useTheme()
-  const legendColor = dark ? '#888' : '#555'
 
   async function run() {
     if (!editorA || !editorB) return
@@ -115,116 +114,184 @@ export default function Compare({ overview }) {
     { label: 'Cache Hit Rate', a: pct(result.deepA.totalCacheRead, result.deepA.totalInputTokens), b: pct(result.deepB.totalCacheRead, result.deepB.totalInputTokens) },
   ] : []
 
-  // Bar chart: side-by-side comparison of key metrics
-  const barLabels = ['Sessions', 'Messages', 'Tool Calls']
-  const barDataA = result ? [result.chatsA.total, result.deepA.totalMessages, result.deepA.totalToolCalls] : []
-  const barDataB = result ? [result.chatsB.total, result.deepB.totalMessages, result.deepB.totalToolCalls] : []
+  const gridColor = dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.06)'
+  const legendColor = dark ? '#a1a1aa' : '#52525b'
 
-  const barChart = {
-    labels: barLabels,
-    datasets: [
-      { label: nameA, data: barDataA, backgroundColor: colorA + '99', borderRadius: 2 },
-      { label: nameB, data: barDataB, backgroundColor: colorB + '99', borderRadius: 2 },
-    ],
-  }
+  // Bar chart data for usage comparison
+  const barDataA = result ? [
+    result.chatsA.total,
+    result.deepA.totalMessages,
+    result.deepA.totalToolCalls,
+  ] : [0, 0, 0]
 
-  // Token breakdown bar chart
-  const tokenLabels = ['Input', 'Output', 'Cache Read']
+  const barDataB = result ? [
+    result.chatsB.total,
+    result.deepB.totalMessages,
+    result.deepB.totalToolCalls,
+  ] : [0, 0, 0]
+
+  // Token distribution chart data
   const tokenChart = result ? {
-    labels: tokenLabels,
     datasets: [
-      { label: nameA, data: [result.deepA.totalInputTokens, result.deepA.totalOutputTokens, result.deepA.totalCacheRead], backgroundColor: colorA + '99', borderRadius: 2 },
-      { label: nameB, data: [result.deepB.totalInputTokens, result.deepB.totalOutputTokens, result.deepB.totalCacheRead], backgroundColor: colorB + '99', borderRadius: 2 },
+      {
+        data: [
+          result.deepA.totalInputTokens,
+          result.deepA.totalOutputTokens,
+          result.deepA.totalCacheRead,
+        ],
+      },
+      {
+        data: [
+          result.deepB.totalInputTokens,
+          result.deepB.totalOutputTokens,
+          result.deepB.totalCacheRead,
+        ],
+      },
     ],
   } : null
 
   const barOpts = {
-    responsive: true, maintainAspectRatio: false,
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      legend: { labels: { color: legendColor, font: { size: 9, family: MONO }, usePointStyle: true, pointStyle: 'circle', padding: 8 } },
-      tooltip: { bodyFont: { family: MONO, size: 10 }, titleFont: { family: MONO, size: 10 } },
+      legend: {
+        labels: { color: legendColor, font: { size: 11, family: MONO }, usePointStyle: true, pointStyle: 'circle', padding: 10 }
+      },
+      tooltip: {
+        bodyFont: { family: MONO, size: 12 },
+        titleFont: { family: MONO, size: 12 },
+        padding: 12,
+        cornerRadius: 8,
+        backgroundColor: 'var(--color-bg-3)',
+        borderColor: 'var(--color-border)',
+        borderWidth: 1,
+      },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: legendColor, font: { size: 9, family: MONO } } },
-      y: { grid: { color: dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.06)' }, ticks: { color: legendColor, font: { size: 9, family: MONO } } },
+      x: { grid: { display: false }, ticks: { color: legendColor, font: { size: 10, family: MONO } } },
+      y: { grid: { color: gridColor }, ticks: { color: legendColor, font: { size: 10, family: MONO } }, border: { display: false } },
     },
   }
 
   return (
-    <div className="fade-in space-y-3">
-      <div className="flex items-center gap-2">
-        <select
-          value={editorA}
-          onChange={e => setEditorA(e.target.value)}
-          className="px-2 py-1 text-[12px] outline-none"
-          style={{ background: 'var(--c-bg3)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
-        >
-          {editors.map(e => <option key={e.id} value={e.id}>{editorLabel(e.id)}</option>)}
-        </select>
-        <ArrowLeftRight size={12} style={{ color: 'var(--c-text3)' }} />
-        <select
-          value={editorB}
-          onChange={e => setEditorB(e.target.value)}
-          className="px-2 py-1 text-[12px] outline-none"
-          style={{ background: 'var(--c-bg3)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
-        >
-          {editors.map(e => <option key={e.id} value={e.id}>{editorLabel(e.id)}</option>)}
-        </select>
-        {loading && <Loader2 size={11} className="animate-spin" style={{ color: 'var(--c-text3)' }} />}
+    <div className="fade-in space-y-6">
+      {/* Header with selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>Editor Comparison</h1>
+          <p className="text-sm" style={{ color: 'var(--color-text-3)' }}>Compare usage patterns and efficiency metrics</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <select
+              value={editorA}
+              onChange={e => setEditorA(e.target.value)}
+              className="input w-40"
+            >
+              {editors.map(e => <option key={e.id} value={e.id}>{editorLabel(e.id)}</option>)}
+            </select>
+            <ArrowLeftRight size={16} style={{ color: 'var(--color-text-4)' }} />
+            <select
+              value={editorB}
+              onChange={e => setEditorB(e.target.value)}
+              className="input w-40"
+            >
+              {editors.map(e => <option key={e.id} value={e.id}>{editorLabel(e.id)}</option>)}
+            </select>
+          </div>
+          {loading && <Loader2 size={16} className="animate-spin" style={{ color: 'var(--color-accent)' }} />}
+        </div>
       </div>
 
       {result && (
-        <div className="space-y-3">
+        <>
           {/* Metrics + Ratios side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-            <div className="card p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <h3 className="text-[11px] font-medium uppercase tracking-wider" style={{ color: 'var(--c-text2)' }}>totals</h3>
-                <div className="flex items-center gap-3 text-[10px]">
-                  <span style={{ color: colorA }}>● {nameA}</span>
-                  <span style={{ color: colorB }}>● {nameB}</span>
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
+            <div className="card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>Totals</h3>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: colorA }} />
+                    <span style={{ color: 'var(--color-text-2)' }}>{nameA}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: colorB }} />
+                    <span style={{ color: 'var(--color-text-2)' }}>{nameB}</span>
+                  </span>
                 </div>
               </div>
-              {metrics.map(m => <MetricRow key={m.label} label={m.label} a={m.a} b={m.b} colorA={colorA} colorB={colorB} />)}
+              <div className="space-y-1">
+                {metrics.map(m => <MetricRow key={m.label} label={m.label} a={m.a} b={m.b} colorA={colorA} colorB={colorB} />)}
+              </div>
             </div>
-            <div className="card p-3">
-              <h3 className="text-[11px] font-medium uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text2)' }}>efficiency</h3>
-              {ratios.map(m => <MetricRow key={m.label} label={m.label} a={m.a} b={m.b} colorA={colorA} colorB={colorB} />)}
+
+            <div className="card p-5">
+              <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--color-text)' }}>Efficiency Ratios</h3>
+              <div className="space-y-1">
+                {ratios.map(m => <MetricRow key={m.label} label={m.label} a={m.a} b={m.b} colorA={colorA} colorB={colorB} />)}
+              </div>
             </div>
           </div>
 
           {/* Charts row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-            <div className="card p-3">
-              <h3 className="text-[11px] font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--c-text2)' }}>usage</h3>
-              <div style={{ height: 160 }}>
-                <Bar data={barChart} options={barOpts} />
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))' }}>
+            <div className="card p-5">
+              <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--color-text)' }}>Usage Comparison</h3>
+              <div style={{ height: 220 }}>
+                <Bar
+                  data={{
+                    labels: ['Sessions', 'Messages', 'Tool Calls'],
+                    datasets: [
+                      { label: nameA, data: barDataA, backgroundColor: colorA + 'b3', borderRadius: 6 },
+                      { label: nameB, data: barDataB, backgroundColor: colorB + 'b3', borderRadius: 6 },
+                    ],
+                  }}
+                  options={{
+                    ...barOpts,
+                    plugins: {
+                      ...barOpts.plugins,
+                      legend: { ...barOpts.plugins.legend, position: 'top' },
+                    },
+                  }}
+                />
               </div>
             </div>
+
             {tokenChart && (
-              <div className="card p-3">
-                <h3 className="text-[11px] font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--c-text2)' }}>tokens</h3>
-                <div style={{ height: 160 }}>
-                  <Bar data={tokenChart} options={barOpts} />
+              <div className="card p-5">
+                <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--color-text)' }}>Token Distribution</h3>
+                <div style={{ height: 220 }}>
+                  <Bar
+                    data={{
+                      labels: ['Input', 'Output', 'Cache Read'],
+                      datasets: [
+                        { label: nameA, data: tokenChart.datasets[0].data, backgroundColor: colorA + 'b3', borderRadius: 6 },
+                        { label: nameB, data: tokenChart.datasets[1].data, backgroundColor: colorB + 'b3', borderRadius: 6 },
+                      ],
+                    }}
+                    options={barOpts}
+                  />
                 </div>
               </div>
             )}
           </div>
 
           {/* Tools + Models side-by-side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-            <div className="card p-3">
-              <h3 className="text-[11px] font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--c-text2)' }}>top tools</h3>
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
+            <div className="card p-5">
+              <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--color-text)' }}>Top Tools</h3>
               <ListCompare titleA={nameA} titleB={nameB} colorA={colorA} colorB={colorB}
                 itemsA={result.deepA.topTools} itemsB={result.deepB.topTools} limit={10} />
             </div>
-            <div className="card p-3">
-              <h3 className="text-[11px] font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--c-text2)' }}>models</h3>
+
+            <div className="card p-5">
+              <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--color-text)' }}>Models Used</h3>
               <ListCompare titleA={nameA} titleB={nameB} colorA={colorA} colorB={colorB}
                 itemsA={result.deepA.topModels} itemsB={result.deepB.topModels} limit={8} />
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )

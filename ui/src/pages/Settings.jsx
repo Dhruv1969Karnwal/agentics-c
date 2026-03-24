@@ -47,38 +47,35 @@ export default function Settings() {
   const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name))
 
   return (
-    <div className="fade-in space-y-4">
-      <div className="flex items-center gap-1.5 text-[13px] font-bold" style={{ color: 'var(--c-white)' }}>
-        <SettingsIcon size={14} style={{ color: '#6366f1' }} />
-        Settings
+    <div className="fade-in space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>Settings</h1>
+        <p className="text-sm" style={{ color: 'var(--color-text-3)' }}>Manage your projects and preferences</p>
       </div>
 
       <div className="card overflow-hidden">
-        <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--c-border)' }}>
-          <SectionTitle>
-            <FolderOpen size={11} className="inline mr-1" />
-            projects ({projects.length})
-          </SectionTitle>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <SectionTitle icon={FolderOpen}>Projects ({projects.length})</SectionTitle>
+          <div className="flex items-center gap-3">
             {hiddenProjects.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.15)' }}>
+              <span className="badge badge-muted">
                 {hiddenProjects.length} hidden
               </span>
             )}
             <div className="relative">
-              <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text3)' }} />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-4)' }} />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Filter projects..."
-                className="pl-6 pr-2 py-1 text-[11px] outline-none w-[180px]"
-                style={{ background: 'var(--c-bg3)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+                className="input w-64"
+                style={{ paddingLeft: '2.5rem' }}
               />
             </div>
           </div>
         </div>
-        <div className="text-[11px] px-3 py-1.5" style={{ color: 'var(--c-text3)', borderBottom: '1px solid var(--c-border)', background: 'var(--c-bg3)' }}>
+        <div className="text-sm px-5 py-3" style={{ color: 'var(--color-text-3)', background: 'var(--color-bg-3)' }}>
           Hidden projects are excluded from all dashboard stats, sessions, costs, and analytics.
         </div>
 
@@ -87,7 +84,7 @@ export default function Settings() {
         ))}
 
         {sorted.length === 0 && (
-          <div className="text-center py-6 text-[12px]" style={{ color: 'var(--c-text3)' }}>no projects match filter</div>
+          <div className="text-center py-12 text-base" style={{ color: 'var(--color-text-3)' }}>No projects match your filter</div>
         )}
       </div>
     </div>
@@ -99,43 +96,48 @@ function ProjectRow({ project: p, hidden, onToggle, saving }) {
 
   return (
     <div
-      className="flex items-center gap-3 px-3 py-2 transition"
+      className="flex items-center gap-4 px-5 py-4 transition-all border-b"
       style={{
-        borderBottom: '1px solid var(--c-border)',
+        borderBottomColor: 'var(--color-border)',
         opacity: hidden ? 0.5 : 1,
+        background: 'transparent',
       }}
-      onMouseEnter={e => e.currentTarget.style.background = 'var(--c-bg3)'}
+      onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg-3)'}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
       <button
         onClick={() => onToggle(p.folder)}
         disabled={saving}
-        className="shrink-0 p-1 rounded transition hover:bg-[var(--c-bg)]"
-        style={{ color: hidden ? '#ef4444' : 'var(--c-text3)', border: '1px solid var(--c-border)' }}
+        className="shrink-0 w-10 h-10 flex items-center justify-center rounded-lg transition-all hover:scale-105 disabled:opacity-50"
+        style={{
+          background: hidden ? 'rgba(239, 68, 68, 0.1)' : 'var(--color-bg-3)',
+          color: hidden ? '#ef4444' : 'var(--color-text-3)',
+          border: '1px solid var(--color-border)',
+        }}
         title={hidden ? 'Show this project' : 'Hide this project'}
       >
-        {hidden ? <EyeOff size={12} /> : <Eye size={12} />}
+        {hidden ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>
       <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-medium truncate" style={{ color: hidden ? 'var(--c-text3)' : 'var(--c-white)' }}>
+        <div className="text-base font-semibold truncate mb-1" style={{ color: hidden ? 'var(--color-text-4)' : 'var(--color-text)' }}>
           {p.name}
         </div>
-        <div className="text-[10px] truncate" style={{ color: 'var(--c-text3)' }} title={p.folder}>
+        <div className="text-sm truncate" style={{ color: 'var(--color-text-4)' }} title={p.folder}>
           {p.folder}
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        {editors.slice(0, 3).map(([src, count]) => (
-          <span key={src} className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--c-text3)' }}>
-            <EditorIcon source={src} size={10} />
-            {count}
-          </span>
+      <div className="flex items-center gap-3 shrink-0">
+        {editors.slice(0, 4).map(([src, count]) => (
+          <div key={src} className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ background: 'var(--color-bg-3)' }}>
+            <EditorIcon source={src} size={12} />
+            <span className="text-sm font-mono" style={{ color: 'var(--color-text-2)' }}>{count}</span>
+          </div>
         ))}
       </div>
-      <div className="text-[11px] font-mono shrink-0" style={{ color: 'var(--c-text2)' }}>
+      <div className="text-sm font-mono shrink-0 w-24 text-right" style={{ color: 'var(--color-text-2)' }}>
         {formatNumber(p.totalSessions)}
       </div>
-      <div className="text-[10px] shrink-0 w-[80px] text-right" style={{ color: 'var(--c-text3)' }}>
+      <div className="text-sm shrink-0 w-32 text-right" style={{ color: 'var(--color-text-4)' }}>
         {formatDate(p.lastSeen)}
       </div>
     </div>
