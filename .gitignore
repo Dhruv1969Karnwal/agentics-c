@@ -4,6 +4,7 @@ extra_data
 __pycache__
 *.db
 
+.venv/
 # Logs
 logs
 *.log
