@@ -33,8 +33,11 @@ export default function DateRangePicker({ value, onChange }) {
   }
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
-      <Calendar size={12} style={{ color: active ? 'var(--c-accent)' : 'var(--c-text3)', flexShrink: 0 }} />
+    <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Date range selection">
+      <span className="flex items-center gap-1.5" style={{ color: 'var(--c-text2)' }}>
+        <Calendar size={14} aria-hidden="true" />
+        <span className="text-sm font-medium">Date Range</span>
+      </span>
 
       {/* Preset buttons */}
       {PRESETS.map(p => {
@@ -46,12 +49,13 @@ export default function DateRangePicker({ value, onChange }) {
           <button
             key={p.label}
             onClick={() => applyPreset(p.days)}
-            className="px-2 py-0.5 text-[11px] transition"
+            className="px-3 py-1 text-xs font-medium transition min-h-[32px] min-w-[48px]"
             style={{
               border: isActive ? '1px solid var(--c-accent)' : '1px solid var(--c-border)',
               color: isActive ? 'var(--c-accent)' : 'var(--c-text2)',
-              background: isActive ? 'rgba(99,102,241,0.1)' : 'transparent',
+              background: isActive ? 'rgba(99,102,241,0.1)' : 'var(--c-bg3)',
             }}
+            aria-pressed={isActive}
           >
             {p.label}
           </button>
@@ -59,43 +63,48 @@ export default function DateRangePicker({ value, onChange }) {
       })}
 
       {/* Custom date inputs */}
-      <input
-        type="date"
-        value={value?.from || ''}
-        max={value?.to || today}
-        onChange={e => setFrom(e.target.value)}
-        className="px-1.5 py-0.5 text-[11px] outline-none cursor-pointer"
-        style={{
-          background: 'var(--c-bg3)',
-          color: 'var(--c-text)',
-          border: '1px solid var(--c-border)',
-          colorScheme: dark ? 'dark' : 'light',
-        }}
-      />
-      <span className="text-[11px]" style={{ color: 'var(--c-text3)' }}>—</span>
-      <input
-        type="date"
-        value={value?.to || ''}
-        min={value?.from || ''}
-        max={today}
-        onChange={e => setTo(e.target.value)}
-        className="px-1.5 py-0.5 text-[11px] outline-none cursor-pointer"
-        style={{
-          background: 'var(--c-bg3)',
-          color: 'var(--c-text)',
-          border: '1px solid var(--c-border)',
-          colorScheme: dark ? 'dark' : 'light',
-        }}
-      />
+      <div className="flex items-center gap-1.5">
+        <input
+          type="date"
+          value={value?.from || ''}
+          max={value?.to || today}
+          onChange={e => setFrom(e.target.value)}
+          className="px-3 py-1.5 text-sm outline-none cursor-pointer min-h-[36px]"
+          style={{
+            background: 'var(--c-bg3)',
+            color: 'var(--c-text)',
+            border: '1px solid var(--c-border)',
+            colorScheme: dark ? 'dark' : 'light',
+          }}
+          aria-label="Start date"
+        />
+        <span className="text-sm" style={{ color: 'var(--c-text3)' }}>to</span>
+        <input
+          type="date"
+          value={value?.to || ''}
+          min={value?.from || ''}
+          max={today}
+          onChange={e => setTo(e.target.value)}
+          className="px-3 py-1.5 text-sm outline-none cursor-pointer min-h-[36px]"
+          style={{
+            background: 'var(--c-bg3)',
+            color: 'var(--c-text)',
+            border: '1px solid var(--c-border)',
+            colorScheme: dark ? 'dark' : 'light',
+          }}
+          aria-label="End date"
+        />
+      </div>
 
       {/* Clear button */}
       {active && (
         <button
           onClick={() => onChange(null)}
-          className="flex items-center gap-0.5 px-2 py-0.5 text-[11px] transition"
-          style={{ border: '1px solid var(--c-accent)', color: 'var(--c-accent)' }}
+          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium transition min-h-[36px]"
+          style={{ border: '1px solid var(--c-accent)', color: 'var(--c-accent)', background: 'transparent' }}
+          aria-label="Clear date range filter"
         >
-          <X size={9} /> clear
+          <X size={12} aria-hidden="true" /> Clear
         </button>
       )}
     </div>

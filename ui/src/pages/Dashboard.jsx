@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, X, Flame, Zap, MessageSquare, Wrench, Share2, AlertTriangle } from 'lucide-react'
+import { ArrowRight, X, Flame, Zap, MessageSquare, Wrench, Share2, AlertTriangle, Activity, FolderOpen, GitCompare } from 'lucide-react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler } from 'chart.js'
 import { Doughnut, Bar, Line } from 'react-chartjs-2'
 import KpiCard from '../components/KpiCard'
@@ -169,83 +169,97 @@ export default function Dashboard({ overview, selectedEditor: globalEditor }) {
 
 
   return (
-    <div className="fade-in space-y-3">
+    <div className="fade-in space-y-4">
       {/* Top bar */}
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <DateRangePicker value={dateRange} onChange={setDateRange} />
         <button
           onClick={() => setShareOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1 text-[12px] rounded-md transition hover:opacity-80 hidden"
-          style={{ background: '#6366f1', color: '#fff' }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition hover:bg-[var(--c-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-accent)] hidden"
+          style={{ background: 'var(--c-accent)', color: '#fff', minHeight: '36px' }}
         >
-          <Share2 size={12} />
+          <Share2 size={14} />
           Share Stats
         </button>
       </div>
 
-      {/* Editor breakdown - compact row */}
-      <div className="card p-3">
-        <div className="flex items-center flex-wrap gap-1.5">
+      {/* Editor breakdown */}
+      <div className="card p-4">
+        <div className="flex items-center flex-wrap gap-2 mb-2">
           {allEditors.map(e => {
             const isSelected = effectiveEditor === e.id
             return (
               <button
                 key={e.id}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] cursor-pointer transition rounded-sm"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition rounded-md border min-h-[36px]"
                 style={{
-                  border: isSelected ? `1.5px solid ${editorColor(e.id)}` : '1px solid var(--c-border)',
-                  background: isSelected ? editorColor(e.id) + '15' : 'transparent',
-                  opacity: effectiveEditor && !isSelected ? 0.4 : 1,
+                  borderColor: isSelected ? editorColor(e.id) : 'var(--c-border)',
+                  background: isSelected ? editorColor(e.id) + '15' : 'var(--c-bg3)',
+                  opacity: effectiveEditor && !isSelected ? 0.5 : 1,
                   color: 'var(--c-text)',
                 }}
                 onClick={() => setLocalEditor(isSelected ? null : e.id)}
+                aria-pressed={isSelected}
+                aria-label={`Filter by ${editorLabel(e.id)}, ${e.count} sessions`}
               >
-                <EditorIcon source={e.id} size={14} />
+                <EditorIcon source={e.id} size={16} />
                 <span style={{ color: 'var(--c-text2)' }}>{editorLabel(e.id)}</span>
-                <span className="font-bold" style={{ color: 'var(--c-white)' }}>{e.count}</span>
+                <span className="font-bold text-xs" style={{ color: 'var(--c-white)' }}>({e.count})</span>
               </button>
             )
           })}
         </div>
         {effectiveEditor && sel && (
-          <div className="mt-2 flex items-center gap-2">
-            <button onClick={() => navigate(`/sessions?editor=${effectiveEditor}`)} className="flex items-center gap-1 text-[12px] px-2.5 py-1 transition" style={{ color: 'var(--c-accent)', border: '1px solid var(--c-border)' }}>
-              Show Sessions <ArrowRight size={11} />
+          <div className="flex items-center gap-2.5 pt-2 border-t" style={{ borderColor: 'var(--c-border)' }}>
+            <button
+              onClick={() => navigate(`/sessions?editor=${effectiveEditor}`)}
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded transition min-h-[32px]"
+              style={{ color: 'var(--c-accent)', border: '1px solid var(--c-border)' }}
+              aria-label={`View all ${editorLabel(effectiveEditor)} sessions`}
+            >
+              View All <ArrowRight size={12} aria-hidden="true" />
             </button>
-            <button onClick={() => setLocalEditor(null)} className="flex items-center gap-1 text-[12px] px-2.5 py-1 transition" style={{ color: 'var(--c-text2)', border: '1px solid var(--c-border)' }}>
-              <X size={9} /> Clear
+            <button
+              onClick={() => setLocalEditor(null)}
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded transition min-h-[32px]"
+              style={{ color: 'var(--c-text2)', border: '1px solid var(--c-border)' }}
+              aria-label="Clear editor filter"
+            >
+              <X size={12} aria-hidden="true" /> Clear Filter
             </button>
           </div>
         )}
       </div>
 
 
-      {/* KPIs — compact single row */}
-      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}>
-        <KpiCard label="sessions" value={formatNumber(d.totalChats)} sub={sel ? editorLabel(sel.id) : `${allEditors.length} editors`} onClick={() => navigate(effectiveEditor ? `/sessions?editor=${effectiveEditor}` : '/sessions')} />
-        <KpiCard label="projects" value={d.topProjects.length} sub={`${daysSpan}d span`} onClick={() => navigate('/projects')} />
-        <KpiCard label="this month" value={thisMonth ? thisMonth.count : 0} sub={thisMonth ? thisMonth.month : ''} onClick={() => navigate('/sessions')} />
+      {/* KPIs — Primary metrics */}
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))' }}>
+        <KpiCard label="Sessions" value={formatNumber(d.totalChats)} sub={sel ? editorLabel(sel.id) : `${allEditors.length} editors`} onClick={() => navigate(effectiveEditor ? `/sessions?editor=${effectiveEditor}` : '/sessions')} icon={MessageSquare} />
+        <KpiCard label="Projects" value={d.topProjects.length} sub={`${daysSpan}d span`} onClick={() => navigate('/projects')} icon={FolderOpen} />
+        <KpiCard label="This Month" value={thisMonth ? thisMonth.count : 0} sub={thisMonth ? thisMonth.month : ''} onClick={() => navigate('/sessions')} icon={Activity} />
         {stats && <>
-          <KpiCard label="avg depth" value={avgMsgsPerSession} sub={<span className="flex items-center gap-0.5"><MessageSquare size={8} /> msgs/session</span>} />
-          <KpiCard label="tool calls" value={formatNumber(stats.totalToolCalls)} sub={<span className="flex items-center gap-0.5"><Wrench size={8} /> total</span>} />
+          <KpiCard label="Avg Depth" value={avgMsgsPerSession} sub={<span className="flex items-center gap-1"><MessageSquare size={10} /> msgs/session</span>} />
+          <KpiCard label="Tool Calls" value={formatNumber(stats.totalToolCalls)} sub={<span className="flex items-center gap-1"><Wrench size={10} /> total</span>} />
         </>}
-        {tk && tk.input > 0 && <>
-          <KpiCard label="tokens in" value={formatNumber(tk.input)} sub="prompt" />
-          <KpiCard label="tokens out" value={formatNumber(tk.output)} sub={`${outputInputRatio}× ratio`} />
-          <KpiCard label="cache hit" value={`${cacheHitRate}%`} sub={formatNumber(tk.cacheRead)} />
-          <KpiCard label="you wrote" value={formatNumber(tk.userChars)} sub={`AI: ${formatNumber(tk.assistantChars)}`} />
-        </>}
+        {tk && tk.input > 0 && (
+          <>
+            <KpiCard label="Tokens In" value={formatNumber(tk.input)} sub="prompt" />
+            <KpiCard label="Tokens Out" value={formatNumber(tk.output)} sub={`${outputInputRatio}× ratio`} />
+            <KpiCard label="Cache Hit" value={`${cacheHitRate}%`} sub={formatNumber(tk.cacheRead)} />
+            <KpiCard label="You Wrote" value={formatNumber(tk.userChars)} sub={`AI: ${formatNumber(tk.assistantChars)}`} />
+          </>
+        )}
       </div>
 
       {/* Token economy KPIs */}
       {tk && tk.input > 0 && (
-        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}>
-          <KpiCard label="in tokens" value={formatNumber(tk.input)} sub="total prompt" />
-          <KpiCard label="out tokens" value={formatNumber(tk.output)} sub="total completion" />
-          <KpiCard label="cache read" value={formatNumber(tk.cacheRead)} sub={`${cacheHitRate}% hit rate`} />
-          <KpiCard label="cache write" value={formatNumber(tk.cacheWrite)} />
-          <KpiCard label="out/in ratio" value={`${outputInputRatio}×`} sub={<span className="flex items-center gap-0.5"><Zap size={8} /> efficiency</span>} />
-          <KpiCard label="you wrote" value={formatNumber(tk.userChars)} sub={`AI wrote ${formatNumber(tk.assistantChars)}`} />
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))' }}>
+          <KpiCard label="Input Tokens" value={formatNumber(tk.input)} sub="total prompt" />
+          <KpiCard label="Output Tokens" value={formatNumber(tk.output)} sub="total completion" />
+          <KpiCard label="Cache Read" value={formatNumber(tk.cacheRead)} sub={`${cacheHitRate}% hit rate`} />
+          <KpiCard label="Cache Write" value={formatNumber(tk.cacheWrite)} />
+          <KpiCard label="Out/In Ratio" value={`${outputInputRatio}×`} sub={<span className="flex items-center gap-1"><Zap size={10} /> efficiency</span>} />
+          <KpiCard label="Your Input" value={formatNumber(tk.userChars)} sub={`AI output: ${formatNumber(tk.assistantChars)}`} />
         </div>
       )}
 

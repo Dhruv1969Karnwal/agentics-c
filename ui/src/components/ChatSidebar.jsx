@@ -68,9 +68,14 @@ export default function ChatSidebar({ chatId, onClose, fetchFn, extraHeader, use
         }}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--c-border)' }}>
-          <button onClick={onClose} className="p-1 rounded transition hover:bg-[var(--c-bg3)]" style={{ color: 'var(--c-text2)' }}>
-            <X size={14} />
+        <div className="flex items-center gap-3 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--c-border)', background: 'var(--c-bg2)' }}>
+          <button
+            onClick={onClose}
+            className="p-2.5 rounded transition hover:bg-[var(--c-card)] min-h-[44px] min-w-[44px] flex items-center justify-center"
+            style={{ color: 'var(--c-text2)' }}
+            aria-label="Close sidebar"
+          >
+            <X size={18} aria-hidden="true" />
           </button>
           {chat && (
             <div className="flex-1 min-w-0">

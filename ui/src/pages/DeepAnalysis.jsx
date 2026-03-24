@@ -400,7 +400,7 @@ export default function DeepAnalysis({ overview, selectedEditor }) {
               <div className="space-y-3 mt-2">
                 {/* Human vs AI chars */}
                 <div>
-                  <div className="text-[11px] mb-1" style={{ color: 'var(--c-text2)' }}>you vs AI (characters)</div>
+                  <div className="text-[11px] mb-1" style={{ color: 'var(--c-text2)' }}>you vs AI (thoughts)</div>
                   <ProportionBar height={8} segments={[
                     { label: 'You', value: data.totalUserChars, color: '#6366f1' },
                     { label: 'AI', value: data.totalAssistantChars, color: '#34d399' },

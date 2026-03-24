@@ -76,8 +76,8 @@ export default function Projects({ overview, selectedEditor, setSelectedEditor }
   return (
     <div className="fade-in space-y-4">
       {/* KPIs */}
-      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}>
-        <KpiCard label="projects" value={projects.length} />
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))' }}>
+        <KpiCard label="Projects" value={projects.length} />
         <KpiCard label="sessions" value={formatNumber(totalSessions)} onClick={() => navigate('/sessions')} />
         <KpiCard label="messages" value={formatNumber(totalMessages)} />
         <KpiCard label="tokens" value={formatNumber(totalTokens)} />

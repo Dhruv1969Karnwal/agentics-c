@@ -102,19 +102,21 @@ export default function ActivityHeatmap({ dailyData }) {
   const txtDim = dark ? '#555' : '#999'
   const gridColor = dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.06)'
   const legendColor = dark ? '#888' : '#555'
-  const svgWidth = WEEK_COLS * (CELL_SIZE + CELL_GAP) + 28
-  const svgHeight = 7 * (CELL_SIZE + CELL_GAP) + 20
+
+  const cellSize = CELL_SIZE + 2 // Larger touch target
+  const svgWidth = WEEK_COLS * cellSize + 32
+  const svgHeight = 7 * cellSize + 24
 
   return (
     <div>
       <div className="overflow-x-auto scrollbar-thin" ref={containerRef}>
-        <svg width={svgWidth} height={svgHeight} className="block">
+        <svg width={svgWidth} height={svgHeight} className="block" role="img" aria-label="GitHub-style contribution heatmap showing coding activity">
           {/* Month labels */}
           {grid.months.map((m, i) => (
-            <text key={i} x={28 + m.week * (CELL_SIZE + CELL_GAP)} y={8} fill="var(--c-text3)" fontSize={8}>{m.label}</text>
+            <text key={i} x={30 + m.week * cellSize} y={10} fill="var(--c-text2)" fontSize={10} fontWeight="500">{m.label}</text>
           ))}
           {DAY_LABELS.map((label, i) => (
-            <text key={i} x={0} y={14 + i * (CELL_SIZE + CELL_GAP) + CELL_SIZE - 2} fill="var(--c-text3)" fontSize={8}>{label}</text>
+            <text key={i} x={2} y={18 + i * cellSize + CELL_SIZE - 2} fill="var(--c-text3)" fontSize={9}>{label}</text>
           ))}
           {/* Cells */}
           {grid.weeks.map((week, w) =>
@@ -123,51 +125,61 @@ export default function ActivityHeatmap({ dailyData }) {
               const intensity = getIntensity(cell.count, grid.maxCount)
               const isSelected = selectedDay?.key === cell.key
               return (
-                <rect
-                  key={cell.key}
-                  x={28 + w * (CELL_SIZE + CELL_GAP)}
-                  y={12 + d * (CELL_SIZE + CELL_GAP)}
-                  width={CELL_SIZE}
-                  height={CELL_SIZE}
-                  rx={0}
-                  fill={COLORS[intensity]}
-                  stroke={isSelected ? '#818cf8' : 'transparent'}
-                  strokeWidth={isSelected ? 2 : 0}
-                  className="cursor-pointer transition-all"
-                  onClick={() => setSelectedDay(cell.count > 0 ? cell : null)}
-                >
-                  <title>{`${cell.key}: ${cell.count} session${cell.count !== 1 ? 's' : ''}`}</title>
-                </rect>
+                <g key={cell.key}>
+                  <rect
+                    x={30 + w * cellSize}
+                    y={12 + d * cellSize}
+                    width={CELL_SIZE}
+                    height={CELL_SIZE}
+                    rx={2}
+                    fill={COLORS[intensity]}
+                    className="cursor-pointer transition-all hover:brightness-110"
+                    style={{ outline: isSelected ? '2px solid var(--c-accent)' : 'none', outlineOffset: '1px' }}
+                    onClick={() => setSelectedDay(cell.count > 0 ? cell : null)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedDay(cell.count > 0 ? cell : null); }}}
+                    tabIndex={cell.count > 0 ? 0 : -1}
+                    role="gridcell"
+                    aria-label={`${cell.key}: ${cell.count} session${cell.count !== 1 ? 's' : ''}`}
+                    aria-selected={isSelected}
+                  />
+                </g>
               )
             })
           )}
         </svg>
       </div>
 
-      <div className="flex items-center gap-1.5 mt-1 text-[10px]" style={{ color: 'var(--c-text3)' }}>
-        <span>less</span>
+      <div className="flex items-center gap-2 mt-2 text-xs" style={{ color: 'var(--c-text2)', lineHeight: '1.6' }}>
+        <span>Less</span>
         {COLORS.map((color, i) => (
-          <span key={i} className="inline-block w-[9px] h-[9px] rounded-sm" style={{ background: color }} />
+          <span key={i} className="inline-block w-4 h-4 rounded-sm" style={{ background: color, border: '1px solid var(--c-border)' }} />
         ))}
-        <span>more</span>
+        <span>More</span>
       </div>
 
       {/* Drill-down: hourly activity for selected day */}
       {selectedDay && selectedDay.data && (
-        <div className="mt-2 card p-3 fade-in">
-          <div className="flex items-center justify-between mb-2">
+        <div className="mt-3 card p-4 fade-in" role="region" aria-label={`Hourly activity for ${selectedDay.key}`}>
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <span className="text-xs font-medium" style={{ color: 'var(--c-white)' }}>{selectedDay.key}</span>
-              <span className="text-[11px] ml-2" style={{ color: 'var(--c-text2)' }}>
+              <span className="text-sm font-semibold" style={{ color: 'var(--c-white)' }}>{selectedDay.key}</span>
+              <span className="text-xs ml-2" style={{ color: 'var(--c-text2)' }}>
                 {selectedDay.count} session{selectedDay.count !== 1 ? 's' : ''}
                 {' · '}
                 {Object.entries(selectedDay.data.editors || {}).map(([e, c]) => `${editorLabel(e)}: ${c}`).join(', ')}
               </span>
             </div>
-            <button onClick={() => setSelectedDay(null)} className="text-[11px] transition" style={{ color: 'var(--c-text2)' }}>close</button>
+            <button
+              onClick={() => setSelectedDay(null)}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition min-h-[28px]"
+              style={{ color: 'var(--c-text2)', border: '1px solid var(--c-border)' }}
+              aria-label="Close hourly breakdown"
+            >
+              Close
+            </button>
           </div>
           {hourlyChart && (
-            <div style={{ height: 140 }}>
+            <div style={{ height: 160 }} aria-hidden="true">
               <Line
                 data={hourlyChart}
                 options={{
@@ -177,22 +189,22 @@ export default function ActivityHeatmap({ dailyData }) {
                   scales: {
                     x: {
                       grid: { color: gridColor },
-                      ticks: { color: txtDim, font: { size: 9, family: 'JetBrains Mono, monospace' }, maxRotation: 0 },
+                      ticks: { color: txtDim, font: { size: 10, family: 'JetBrains Mono, monospace' }, maxRotation: 0 },
                     },
                     y: {
                       beginAtZero: true,
                       grid: { color: gridColor },
-                      ticks: { color: txtDim, stepSize: 1, font: { size: 9, family: 'JetBrains Mono, monospace' } },
+                      ticks: { color: txtDim, stepSize: 1, font: { size: 10, family: 'JetBrains Mono, monospace' } },
                     },
                   },
                   plugins: {
                     legend: {
                       position: 'top',
-                      labels: { color: legendColor, font: { size: 9, family: 'JetBrains Mono, monospace' }, usePointStyle: true, pointStyle: 'circle', padding: 8 },
+                      labels: { color: legendColor, font: { size: 10, family: 'JetBrains Mono, monospace' }, usePointStyle: true, pointStyle: 'circle', padding: 8 },
                     },
                     tooltip: {
-                      bodyFont: { family: 'JetBrains Mono, monospace', size: 10 },
-                      titleFont: { family: 'JetBrains Mono, monospace', size: 10 },
+                      bodyFont: { family: 'JetBrains Mono, monospace', size: 11 },
+                      titleFont: { family: 'JetBrains Mono, monospace', size: 11 },
                     },
                   },
                 }}
