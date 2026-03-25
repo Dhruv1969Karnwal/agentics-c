@@ -10,7 +10,6 @@ import KpiCard from '../components/KpiCard'
 import EditorIcon from '../components/EditorIcon'
 import SectionTitle from '../components/SectionTitle'
 import DateRangePicker from '../components/DateRangePicker'
-import ChatSidebar from '../components/ChatSidebar'
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler)
 
@@ -536,8 +535,7 @@ export default function Sessions({ overview, selectedEditor: globalEditor }) {
         </div>
       )}
 
-      {/* Chat sidebar */}
-      {/* <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} /> */}
+      {/* Chat sidebar removed */}
     </div>
   )
 }

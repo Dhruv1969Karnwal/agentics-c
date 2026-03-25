@@ -68,11 +68,6 @@ class ToolCall(Base):
     user_email = Column(String)
     timestamp = Column(Integer)
 
-class Meta(Base):
-    __tablename__ = "meta"
-    key = Column(String, primary_key=True)
-    value = Column(String)
-
 def init_db():
     Base.metadata.create_all(bind=engine)
 

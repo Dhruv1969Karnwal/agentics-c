@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed 's/.*@app\\\\.//')",
+      "Bash(sed \"s/\\(.*\\)//g\")",
+      "Bash(sed 's/.*function //')",
+      "Bash(sed 's/\\(.*//g')",
+      "Bash(ls:*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"import.*from.*api\" ui/src/pages/*.jsx)",
+      "Bash(xargs -I{} basename {})",
+      "Bash(sed 's/.*from //')",
+      "Bash(sed \"s/[''''\"\"]//g\")",
+      "Bash(grep -rh \"import.*components\" ui/src/pages/*.jsx ui/src/App.jsx)",
+      "Bash(grep -E \"^#.*|^[[:space:]]*//\" ui/src/lib/api.js)",
+      "Bash(grep:*)",
+      "Bash(\"ui/src/pages/Dashboard.jsx.tmp\")",
+      "Bash(\"ui/src/pages/Dashboard.jsx.new\")",
+      "Bash(curl -s http://localhost:8000/api/overview)",
+      "Bash(curl -s http://localhost:5174)"
+    ]
+  }
+}

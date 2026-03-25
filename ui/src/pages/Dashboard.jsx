@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, X, Flame, Zap, MessageSquare, Wrench, Share2, AlertTriangle } from 'lucide-react'
+import { ArrowRight, X, Flame, Zap, MessageSquare, Wrench, AlertTriangle } from 'lucide-react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler } from 'chart.js'
 import { Doughnut, Bar, Line } from 'react-chartjs-2'
 import KpiCard from '../components/KpiCard'
@@ -9,9 +9,7 @@ import DateRangePicker from '../components/DateRangePicker'
 import { editorColor, editorLabel, formatNumber, dateRangeToApiParams } from '../lib/constants'
 import EditorIcon from '../components/EditorIcon'
 import { fetchDailyActivity, fetchOverview as fetchOverviewApi, fetchDashboardStats, fetchChats } from '../lib/api'
-import ChatSidebar from '../components/ChatSidebar'
 import AnimatedLoader from '../components/AnimatedLoader'
-import ShareModal from '../components/ShareModal'
 import { useTheme } from '../lib/theme'
 import SectionTitle from '../components/SectionTitle'
 
@@ -33,9 +31,7 @@ export default function Dashboard({ overview, selectedEditor: globalEditor }) {
   const [localEditor, setLocalEditor] = useState(null)
   const [dateRange, setDateRange] = useState(null)
   const { dark } = useTheme()
-  const [shareOpen, setShareOpen] = useState(false)
   const [largeContextChats, setLargeContextChats] = useState(null)
-  const [selectedChatId, setSelectedChatId] = useState(null)
   const txtDim = dark ? '#555' : '#999'
   const gridColor = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'
   const legendColor = dark ? '#888' : '#555'
@@ -173,14 +169,6 @@ export default function Dashboard({ overview, selectedEditor: globalEditor }) {
       {/* Top bar */}
       <div className="flex items-center justify-end gap-3">
         <DateRangePicker value={dateRange} onChange={setDateRange} />
-        <button
-          onClick={() => setShareOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1 text-[12px] rounded-md transition hover:opacity-80 hidden"
-          style={{ background: '#6366f1', color: '#fff' }}
-        >
-          <Share2 size={12} />
-          Share Stats
-        </button>
       </div>
 
       {/* Editor breakdown - compact row */}
@@ -506,8 +494,6 @@ export default function Dashboard({ overview, selectedEditor: globalEditor }) {
           </div>
         )}
       </div>
-      {/* <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} /> */}
-      {/* <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} /> */}
     </div>
   )
 }

@@ -5,7 +5,7 @@ from fastapi import FastAPI, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
-from database import init_db, get_db, Chat, ChatStats, Message, ToolCall, Meta
+from database import init_db, get_db, Chat, ChatStats, Message, ToolCall
 
 from datetime import datetime
 from contextlib import asynccontextmanager

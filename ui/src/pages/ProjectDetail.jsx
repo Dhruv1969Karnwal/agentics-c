@@ -9,7 +9,6 @@ import { useTheme } from '../lib/theme'
 import KpiCard from '../components/KpiCard'
 import EditorIcon from '../components/EditorIcon'
 import SectionTitle from '../components/SectionTitle'
-import ChatSidebar from '../components/ChatSidebar'
 import AnimatedLoader from '../components/AnimatedLoader'
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement)
@@ -319,8 +318,6 @@ export default function ProjectDetail({ selectedEditor }) {
         </div>
       </div>
 
-      {/* Chat sidebar */}
-      {/* <ChatSidebar chatId={selectedChatId} onClose={() => setSelectedChatId(null)} /> */}
     </div>
   )
 }
